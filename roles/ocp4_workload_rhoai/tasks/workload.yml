@@ -1,6 +1,17 @@
 ---
 # Provision tasks for ocp4_workload_rhoai
 
+# ── 0. Preflight checks ──────────────────────────────────────────────────────
+- name: Assert Red Hat registry credentials are set
+  ansible.builtin.assert:
+    that:
+      - ocp4_workload_rhoai_registry_username | length > 0
+      - ocp4_workload_rhoai_registry_password | length > 0
+    fail_msg: >-
+      ocp4_workload_rhoai_registry_username and ocp4_workload_rhoai_registry_password
+      must be set. Supply them via agnosticd-v2-secrets/secrets.yml —
+      never hard-code credentials in vars files.
+
 # ── 1. Install Helm v4 on the bastion ───────────────────────────────────────
 - name: Create temp directory for Helm download
   ansible.builtin.tempfile:

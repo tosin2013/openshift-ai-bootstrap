@@ -1,0 +1,11 @@
+---
+# Stop tasks for ocp4_workload_rhoai
+# RHOAI lifecycle is managed at the cluster level (the cluster is stopped,
+# not the workload). This handler is a no-op but is required by AgnosticD
+# for RHDP cost-management compatibility.
+
+- name: RHOAI workload stop — no-op (cluster-level lifecycle)
+  agnosticd_user_info:
+    msg: >-
+      RHOAI stop: no workload-level stop action required.
+      RHOAI resumes automatically when the cluster starts.

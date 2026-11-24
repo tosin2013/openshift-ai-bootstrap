@@ -9,3 +9,15 @@
 - name: Run removal tasks for RHOAI
   when: ACTION in ["destroy", "remove"]
   ansible.builtin.include_tasks: remove.yml
+
+- name: Run stop tasks for RHOAI
+  when: ACTION == "stop"
+  ansible.builtin.include_tasks: stop.yml
+
+- name: Run start tasks for RHOAI
+  when: ACTION == "start"
+  ansible.builtin.include_tasks: start.yml
+
+- name: Run status tasks for RHOAI
+  when: ACTION == "status"
+  ansible.builtin.include_tasks: status.yml

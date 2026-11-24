@@ -1,0 +1,33 @@
+---
+# Status tasks for ocp4_workload_rhoai
+# Reports the current state of the DataScienceCluster and RHOAI dashboard
+# route so agd status surfaces actionable output.
+
+- name: Get DataScienceCluster status
+  kubernetes.core.k8s_info:
+    api_version: datasciencecluster.opendatahub.io/v1
+    kind: DataScienceCluster
+  register: r_dsc_status
+  failed_when: false
+
+- name: Get RHOAI dashboard route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: rhods-dashboard
+    namespace: redhat-ods-applications
+  register: r_dashboard_status
+  failed_when: false
+
+- name: Report RHOAI status
+  agnosticd_user_info:
+    msg: |
+      RHOAI Status:
+        DataScienceCluster: {{ r_dsc_status.resources | length > 0 | ternary('present', 'not found') }}
+        {% if r_dsc_status.resources | length > 0 %}
+        DSC Ready: {{ r_dsc_status.resources[0].status.conditions |
+          selectattr('type', 'equalto', 'Ready') |
+          selectattr('status', 'equalto', 'True') | list | length > 0 }}
+        {% endif %}
+        Dashboard route: {{ r_dashboard_status.resources | length > 0 |
+          ternary('https://' + (r_dashboard_status.resources[0].spec.host | default('unknown')), 'not found') }}

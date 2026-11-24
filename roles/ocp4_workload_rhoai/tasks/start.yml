@@ -1,0 +1,12 @@
+---
+# Start tasks for ocp4_workload_rhoai
+# RHOAI recovers automatically when the OCP cluster starts. The Argo CD
+# Application has selfHeal: true, so any drift is reconciled on cluster
+# restart. This handler is a no-op but is required by AgnosticD for
+# RHDP cost-management compatibility.
+
+- name: RHOAI workload start — no-op (Argo CD self-heals on cluster start)
+  agnosticd_user_info:
+    msg: >-
+      RHOAI start: no workload-level start action required.
+      Argo CD (selfHeal: true) reconciles RHOAI automatically.

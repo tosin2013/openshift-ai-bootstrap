@@ -28,6 +28,11 @@ ocp4_workload_rhoai_gitops_values_path: "charts/rhai-on-openshift-chart/values.y
 ocp4_workload_rhoai_operator_namespace: "redhat-ods-operator"
 ocp4_workload_rhoai_argocd_namespace: "openshift-gitops"
 
+# Red Hat registry credentials for pulling the OCI Helm chart.
+# Supply via secrets.yml — never hard-code credentials.
+ocp4_workload_rhoai_registry_username: ""
+ocp4_workload_rhoai_registry_password: ""
+
 # Helm v4 download URL and checksum (linux_amd64)
 ocp4_workload_rhoai_helm_version: "4.0.3"
 ocp4_workload_rhoai_helm_url: >-
