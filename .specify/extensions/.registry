@@ -7,8 +7,20 @@
       "manifest_hash": "sha256:44f0a2de47237031011dc7ea60b1a4ebf88bb715311327cf1e44539afbac60eb",
       "enabled": true,
       "priority": 10,
-      "registered_commands": {},
-      "registered_skills": [],
+      "registered_commands": {
+        "claude": [
+          "speckit.roadmap.write",
+          "speckit.roadmap.brief",
+          "speckit.roadmap.debrief",
+          "speckit.roadmap.sync"
+        ]
+      },
+      "registered_skills": [
+        "speckit-roadmap-write",
+        "speckit-roadmap-brief",
+        "speckit-roadmap-debrief",
+        "speckit-roadmap-sync"
+      ],
       "installed_at": "2026-11-24T20:28:01.864652+00:00"
     },
     "spec-status": {
@@ -17,8 +29,24 @@
       "manifest_hash": "sha256:ce81888f6a4e55ffdce1cb30e03d59c5488ae91dc86ea31530642c4fbd260ce1",
       "enabled": true,
       "priority": 10,
-      "registered_commands": {},
-      "registered_skills": [],
+      "registered_commands": {
+        "claude": [
+          "speckit.spec-status.review",
+          "speckit.spec-status.explain",
+          "speckit.spec-status.reconcile",
+          "speckit.spec-status.unblock",
+          "speckit.spec-status.verify-readiness",
+          "speckit.spec-status.close-gap"
+        ]
+      },
+      "registered_skills": [
+        "speckit-spec-status-review",
+        "speckit-spec-status-explain",
+        "speckit-spec-status-reconcile",
+        "speckit-spec-status-unblock",
+        "speckit-spec-status-verify-readiness",
+        "speckit-spec-status-close-gap"
+      ],
       "installed_at": "2026-11-24T20:28:12.720886+00:00"
     }
   }
