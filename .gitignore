@@ -15,3 +15,4 @@ logs/
 .workshop-lock
 .workshop-state
 .claude/
+.specify/extensions/.cache/
