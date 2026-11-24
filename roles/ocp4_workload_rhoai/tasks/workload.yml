@@ -17,23 +17,23 @@
   ansible.builtin.tempfile:
     state: directory
     suffix: helm
-  register: r_helm_tmp
+  register: ocp4_workload_rhoai_helm_tmp
 
 - name: Download Helm v4 archive
   ansible.builtin.get_url:
     url: "{{ ocp4_workload_rhoai_helm_url }}"
-    dest: "{{ r_helm_tmp.path }}/helm.tar.gz"
+    dest: "{{ ocp4_workload_rhoai_helm_tmp.path }}/helm.tar.gz"
     mode: "0644"
 
 - name: Extract Helm binary
   ansible.builtin.unarchive:
-    src: "{{ r_helm_tmp.path }}/helm.tar.gz"
-    dest: "{{ r_helm_tmp.path }}"
+    src: "{{ ocp4_workload_rhoai_helm_tmp.path }}/helm.tar.gz"
+    dest: "{{ ocp4_workload_rhoai_helm_tmp.path }}"
     remote_src: true
 
 - name: Install helm binary to /usr/local/bin
   ansible.builtin.copy:
-    src: "{{ r_helm_tmp.path }}/linux-amd64/helm"
+    src: "{{ ocp4_workload_rhoai_helm_tmp.path }}/linux-amd64/helm"
     dest: /usr/local/bin/helm
     mode: "0755"
     remote_src: true
@@ -41,12 +41,12 @@
 
 - name: Verify Helm version
   ansible.builtin.command: helm version --short
-  register: r_helm_version
+  register: ocp4_workload_rhoai_helm_version_result
   changed_when: false
 
 - name: Display Helm version
   ansible.builtin.debug:
-    msg: "Helm installed: {{ r_helm_version.stdout }}"
+    msg: "Helm installed: {{ ocp4_workload_rhoai_helm_version_result.stdout }}"
 
 # ── 2. Create operator namespace and Red Hat registry pull secret ────────────
 - name: Create RHOAI operator namespace
@@ -78,8 +78,8 @@
     api_version: argoproj.io/v1alpha1
     kind: ArgoCD
     namespace: "{{ ocp4_workload_rhoai_argocd_namespace }}"
-  register: r_argocd
-  until: r_argocd.resources | length > 0
+  register: ocp4_workload_rhoai_argocd
+  until: ocp4_workload_rhoai_argocd.resources | length > 0
   retries: 20
   delay: 30
 
@@ -152,11 +152,14 @@
   kubernetes.core.k8s_info:
     api_version: datasciencecluster.opendatahub.io/v1
     kind: DataScienceCluster
-  register: r_dsc
+  register: ocp4_workload_rhoai_dsc
   until:
-    - r_dsc.resources | length > 0
-    - r_dsc.resources[0].status.conditions is defined
-    - r_dsc.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+    - ocp4_workload_rhoai_dsc.resources | length > 0
+    - ocp4_workload_rhoai_dsc.resources[0].status.conditions is defined
+    - >-
+      ocp4_workload_rhoai_dsc.resources[0].status.conditions |
+      selectattr('type', 'equalto', 'Ready') |
+      selectattr('status', 'equalto', 'True') | list | length > 0
   retries: 40
   delay: 30
 
@@ -167,15 +170,15 @@
     kind: Route
     name: rhods-dashboard
     namespace: redhat-ods-applications
-  register: r_dashboard_route
+  register: ocp4_workload_rhoai_dashboard_route
   retries: 10
   delay: 30
-  until: r_dashboard_route.resources | length > 0
+  until: ocp4_workload_rhoai_dashboard_route.resources | length > 0
 
 - name: Set dashboard URL fact
   ansible.builtin.set_fact:
     ocp4_workload_rhoai_dashboard_url: >-
-      https://{{ r_dashboard_route.resources[0].spec.host }}
+      https://{{ ocp4_workload_rhoai_dashboard_route.resources[0].spec.host }}
 
 # ── 8. Emit agnosticd_user_info ──────────────────────────────────────────────
 - name: Print RHOAI access info

@@ -25,7 +25,7 @@
     state: absent
     api_version: datasciencecluster.opendatahub.io/v1
     kind: DataScienceCluster
-  ignore_errors: true
+  failed_when: false
 
 - name: Delete RHOAI Argo CD registry secret
   kubernetes.core.k8s:
