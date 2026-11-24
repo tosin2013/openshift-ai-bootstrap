@@ -2,11 +2,11 @@
 
 ## Planned Specs
 
-### 001 — AgnosticD Infra Project Scaffold [status: in-progress]
+### 001 — AgnosticD Infra Project Scaffold [status: implemented]
 - **Depends on:** none
 - **Spec dir:** specs/001-agnosticd-infra-project
 
-### 002 — ocp4_workload_rhoai Ansible Role [status: planned]
+### 002 — ocp4_workload_rhoai Ansible Role [status: implemented]
 - **Depends on:** 001
 - **Spec dir:** specs/002-ocp4-workload-rhoai-role
 

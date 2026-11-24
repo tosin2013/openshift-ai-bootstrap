@@ -1,10 +1,10 @@
 # Tasks: ocp4_workload_rhoai Ansible Role
 
-- [ ] Create role directory structure in agnosticd-v2/ansible/roles/ocp4_workload_rhoai/
-- [ ] Write defaults/main.yml with chart_version, operator_type, profile, gpu_enabled vars
-- [ ] Write tasks/main.yml: install Helm v4, create pull secret namespace
-- [ ] Write tasks/provision.yml: create Argo CD Application CR for rhai-on-openshift-chart
-- [ ] Write tasks/wait.yml: wait loop for DataScienceCluster Ready condition
-- [ ] Write tasks/user_info.yml: emit agnosticd_user_info with dashboard URL
-- [ ] Write playbooks: provision.yml, destroy.yml, stop.yml, start.yml, status.yml
-- [ ] Test role syntax check (ansible-lint)
+- [x] Create role directory structure in agnosticd-v2/ansible/roles/ocp4_workload_rhoai/
+- [x] Write defaults/main.yml with chart_version, operator_type, profile, gpu_enabled vars
+- [x] Write tasks/main.yml: ACTION dispatcher (provision/destroy)
+- [x] Write tasks/workload.yml: install Helm v4, create pull secret, deploy Argo CD Application CR
+- [x] Write tasks/remove.yml: remove Argo CD Application and namespaces
+- [x] Write tasks/wait.yml equivalent: wait for DataScienceCluster Ready + emit agnosticd_user_info
+- [x] Copy role into bootstrap repo under roles/ocp4_workload_rhoai/
+- [ ] Test role syntax check (ansible-lint) against agnosticd-v2 EE image

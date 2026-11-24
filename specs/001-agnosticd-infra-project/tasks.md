@@ -1,7 +1,7 @@
 # Tasks: AgnosticD Infra Project Scaffold
 
-- [ ] Clone tosin2013/agnosticd-v2 fork
-- [ ] Clone opendatahub-io/odh-gitops (branch rhoai-3.4)
-- [ ] Scaffold AgnosticD infra project (onboard.yml, deploy.sh, teardown.sh)
-- [ ] Create agnosticd-v2-vars/ directory
-- [ ] Verify scaffold structure matches rhel-devops-skills-cli template
+- [x] Clone tosin2013/agnosticd-v2 fork
+- [x] Clone opendatahub-io/odh-gitops (branch rhoai-devtest)
+- [x] Scaffold AgnosticD infra project (onboard.yml, deploy.sh, teardown.sh)
+- [x] Create agnosticd-v2-vars/ directory
+- [x] Verify scaffold structure matches rhel-devops-skills-cli template
