@@ -1,0 +1,33 @@
+---
+# RHOAI deployment on GCP — OCP 4.22 with GPU nodes
+cloud_provider: gcp
+cloud_provider_version: main
+config: openshift-cluster
+gcp_region: us-east1
+
+host_ocp4_installer_version: "4.22"
+
+workloads:
+  - ocp4_workload_cert_manager
+  - ocp4_workload_machinesets
+  - ocp4_workload_openshift_gitops
+  - ocp4_workload_rhoai
+
+# GPU node pool — n1-standard-4 with NVIDIA T4 accelerator
+ocp4_workload_machinesets_machineset_groups:
+  - name: gpu
+    instance_type: n1-standard-4
+    replicas: 1
+    accelerator:
+      type: nvidia-tesla-t4
+      count: 1
+
+ocp4_workload_rhoai_chart_version: "v3.4"
+ocp4_workload_rhoai_operator_type: "rhoai"
+ocp4_workload_rhoai_profile: "default"
+ocp4_workload_rhoai_nfd_enabled: true
+ocp4_workload_rhoai_gpu_enabled: true
+ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
+
+worker_instance_type: n1-standard-16
+worker_instance_count: 3

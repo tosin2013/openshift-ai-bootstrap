@@ -1,0 +1,180 @@
+---
+# Provision tasks for ocp4_workload_rhoai
+
+# ── 1. Install Helm v4 on the bastion ───────────────────────────────────────
+- name: Create temp directory for Helm download
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: helm
+  register: r_helm_tmp
+
+- name: Download Helm v4 archive
+  ansible.builtin.get_url:
+    url: "{{ ocp4_workload_rhoai_helm_url }}"
+    dest: "{{ r_helm_tmp.path }}/helm.tar.gz"
+    mode: "0644"
+
+- name: Extract Helm binary
+  ansible.builtin.unarchive:
+    src: "{{ r_helm_tmp.path }}/helm.tar.gz"
+    dest: "{{ r_helm_tmp.path }}"
+    remote_src: true
+
+- name: Install helm binary to /usr/local/bin
+  ansible.builtin.copy:
+    src: "{{ r_helm_tmp.path }}/linux-amd64/helm"
+    dest: /usr/local/bin/helm
+    mode: "0755"
+    remote_src: true
+  become: true
+
+- name: Verify Helm version
+  ansible.builtin.command: helm version --short
+  register: r_helm_version
+  changed_when: false
+
+- name: Display Helm version
+  ansible.builtin.debug:
+    msg: "Helm installed: {{ r_helm_version.stdout }}"
+
+# ── 2. Create operator namespace and Red Hat registry pull secret ────────────
+- name: Create RHOAI operator namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ocp4_workload_rhoai_operator_namespace }}"
+
+- name: Create Red Hat registry pull secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: rhoai-pull-secret
+        namespace: "{{ ocp4_workload_rhoai_operator_namespace }}"
+      type: kubernetes.io/dockerconfigjson
+      data:
+        .dockerconfigjson: "{{ ocp4_workload_rhoai_pull_secret_b64 | default(pull_secret | b64encode) }}"
+  when: pull_secret is defined or ocp4_workload_rhoai_pull_secret_b64 is defined
+
+# ── 3. Wait for Argo CD (deployed by ocp4_workload_openshift_gitops) ────────
+- name: Wait for Argo CD to be available
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: ArgoCD
+    namespace: "{{ ocp4_workload_rhoai_argocd_namespace }}"
+  register: r_argocd
+  until: r_argocd.resources | length > 0
+  retries: 20
+  delay: 30
+
+# ── 4. Register Red Hat OCI registry with Argo CD ───────────────────────────
+- name: Create Argo CD OCI registry secret for Red Hat registry
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: rhoai-chart-registry
+        namespace: "{{ ocp4_workload_rhoai_argocd_namespace }}"
+        labels:
+          argocd.argoproj.io/secret-type: repository
+      type: Opaque
+      stringData:
+        url: "registry.redhat.io/rhai"
+        type: helm
+        name: rhoai-chart-registry
+        username: "{{ ocp4_workload_rhoai_registry_username | default(registry_username | default('')) }}"
+        password: "{{ ocp4_workload_rhoai_registry_password | default(registry_password | default('')) }}"
+
+# ── 5. Create Argo CD Application CR for RHOAI chart ───────────────────────
+- name: Create RHOAI Argo CD Application
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: rhoai
+        namespace: "{{ ocp4_workload_rhoai_argocd_namespace }}"
+        finalizers:
+          - resources-finalizer.argocd.argoproj.io
+      spec:
+        project: default
+        source:
+          repoURL: "registry.redhat.io/rhai"
+          chart: rhai-on-openshift-chart
+          targetRevision: "{{ ocp4_workload_rhoai_chart_version }}"
+          helm:
+            releaseName: rhoai
+            values: |
+              skipCrdCheck: true
+              profile: {{ ocp4_workload_rhoai_profile }}
+              operator:
+                type: {{ ocp4_workload_rhoai_operator_type }}
+              dependencies:
+                nfd: {{ ocp4_workload_rhoai_nfd_enabled | lower }}
+                nvidiaGPUOperator: {{ ocp4_workload_rhoai_gpu_enabled | lower }}
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: "{{ ocp4_workload_rhoai_operator_namespace }}"
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+            - SkipDryRunOnMissingResource=true
+
+# ── 6. Wait for DataScienceCluster to reach Ready ───────────────────────────
+- name: Wait for RHOAI operator to install (CRDs to register)
+  ansible.builtin.pause:
+    minutes: 2
+  when: not ansible_check_mode
+
+- name: Wait for DataScienceCluster to reach Ready
+  kubernetes.core.k8s_info:
+    api_version: datasciencecluster.opendatahub.io/v1
+    kind: DataScienceCluster
+  register: r_dsc
+  until:
+    - r_dsc.resources | length > 0
+    - r_dsc.resources[0].status.conditions is defined
+    - r_dsc.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+  retries: 40
+  delay: 30
+
+# ── 7. Get RHOAI dashboard URL ───────────────────────────────────────────────
+- name: Get RHOAI dashboard route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: rhods-dashboard
+    namespace: redhat-ods-applications
+  register: r_dashboard_route
+  retries: 10
+  delay: 30
+  until: r_dashboard_route.resources | length > 0
+
+- name: Set dashboard URL fact
+  ansible.builtin.set_fact:
+    ocp4_workload_rhoai_dashboard_url: >-
+      https://{{ r_dashboard_route.resources[0].spec.host }}
+
+# ── 8. Emit agnosticd_user_info ──────────────────────────────────────────────
+- name: Print RHOAI access info
+  agnosticd_user_info:
+    msg: |
+      Red Hat OpenShift AI (RHOAI) is installed and ready.
+
+      Dashboard URL: {{ ocp4_workload_rhoai_dashboard_url }}
+
+      Profile: {{ ocp4_workload_rhoai_profile }}
+      GPU support: {{ ocp4_workload_rhoai_gpu_enabled }}
+
+      Log in with your OpenShift credentials.

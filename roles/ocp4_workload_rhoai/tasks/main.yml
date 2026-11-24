@@ -1,0 +1,11 @@
+---
+# Main task file for ocp4_workload_rhoai
+# Dispatches based on ACTION
+
+- name: Run workload tasks for RHOAI
+  when: ACTION in ["provision", "create"]
+  ansible.builtin.include_tasks: workload.yml
+
+- name: Run removal tasks for RHOAI
+  when: ACTION in ["destroy", "remove"]
+  ansible.builtin.include_tasks: remove.yml

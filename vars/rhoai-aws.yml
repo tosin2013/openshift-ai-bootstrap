@@ -1,0 +1,40 @@
+---
+# RHOAI deployment on AWS — OCP 4.22 with GPU nodes
+# Cloud provider
+cloud_provider: aws
+cloud_provider_version: main
+config: openshift-cluster
+aws_region: us-east-2
+
+# OpenShift version
+host_ocp4_installer_version: "4.22"
+
+# Workloads applied after cluster provisioning
+workloads:
+  - ocp4_workload_cert_manager
+  - ocp4_workload_machinesets
+  - ocp4_workload_openshift_gitops
+  - ocp4_workload_rhoai
+
+# GPU node pool — g4dn.xlarge (1× NVIDIA T4)
+ocp4_workload_machinesets_machineset_groups:
+  - name: gpu
+    instance_type: g4dn.xlarge
+    replicas: 1
+    labels:
+      nvidia.com/gpu: "true"
+    taints:
+      - key: nvidia.com/gpu
+        effect: NoSchedule
+
+# RHOAI workload settings
+ocp4_workload_rhoai_chart_version: "v3.4"
+ocp4_workload_rhoai_operator_type: "rhoai"
+ocp4_workload_rhoai_profile: "default"
+ocp4_workload_rhoai_nfd_enabled: true
+ocp4_workload_rhoai_gpu_enabled: true
+ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
+
+# Cluster sizing (3 worker nodes minimum for RHOAI)
+worker_instance_type: m6i.4xlarge
+worker_instance_count: 3

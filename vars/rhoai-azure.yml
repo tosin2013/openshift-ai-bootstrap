@@ -1,0 +1,30 @@
+---
+# RHOAI deployment on Azure — OCP 4.22 with GPU nodes
+cloud_provider: azure
+cloud_provider_version: main
+config: openshift-cluster
+azure_region: eastus
+
+host_ocp4_installer_version: "4.22"
+
+workloads:
+  - ocp4_workload_cert_manager
+  - ocp4_workload_machinesets
+  - ocp4_workload_openshift_gitops
+  - ocp4_workload_rhoai
+
+# GPU node pool — Standard_NC6s_v3 (1× NVIDIA V100)
+ocp4_workload_machinesets_machineset_groups:
+  - name: gpu
+    instance_type: Standard_NC6s_v3
+    replicas: 1
+
+ocp4_workload_rhoai_chart_version: "v3.4"
+ocp4_workload_rhoai_operator_type: "rhoai"
+ocp4_workload_rhoai_profile: "default"
+ocp4_workload_rhoai_nfd_enabled: true
+ocp4_workload_rhoai_gpu_enabled: true
+ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
+
+worker_instance_type: Standard_D16s_v3
+worker_instance_count: 3

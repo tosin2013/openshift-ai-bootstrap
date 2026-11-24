@@ -1,0 +1,135 @@
+# onboard.yml — Project onboarding manifest for openshift-ai-bootstrap
+# Schema: https://github.com/tosin2013/rhel-devops-skills-cli (onboard skill)
+
+name: "openshift-ai-bootstrap"
+description: >-
+  AgnosticD v2 deployment of Red Hat OpenShift AI (RHOAI) on OCP 4.22
+  with GPU support, using Helm + GitOps (Argo CD). Supports AWS (primary),
+  GCP, and Azure cloud providers.
+
+prerequisites:
+  - name: python3
+    check_command: "python3 --version"
+    version_regex: "Python (\\d+\\.\\d+\\.\\d+)"
+    min_version: "3.9"
+    install:
+      rhel9: "sudo dnf install -y python3.12"
+      rhel10: "sudo dnf install -y python3.12"
+      fedora: "sudo dnf install -y python3.12"
+      macos: "brew install python@3.12"
+
+  - name: git
+    check_command: "git --version"
+    install:
+      rhel9: "sudo dnf install -y git"
+      rhel10: "sudo dnf install -y git"
+      macos: "brew install git"
+
+  - name: jq
+    check_command: "jq --version"
+    install:
+      rhel9: "sudo dnf install -y jq"
+      rhel10: "sudo dnf install -y jq"
+      macos: "brew install jq"
+
+  - name: aws-cli
+    check_command: "aws --version"
+    install:
+      rhel9: "sudo dnf install -y awscli2"
+      rhel10: "sudo dnf install -y awscli2"
+      macos: "brew install awscli"
+
+  - name: agd
+    check_command: "/home/vpcuser/agnosticd-v2/bin/agd --version"
+    install:
+      fallback: "git clone https://github.com/tosin2013/agnosticd-v2 /home/vpcuser/agnosticd-v2"
+
+  - name: spec
+    check_command: "spec version"
+    install:
+      fallback: >-
+        Download spec v0.4.1 from
+        https://github.com/tosin2013/spec-status/releases/tag/v0.4.1
+        (linux_amd64) and install to ~/.local/bin/spec
+
+setup_steps:
+  - name: "Clone AgnosticD v2 fork (tosin2013)"
+    check: "test -d /home/vpcuser/agnosticd-v2"
+    action: "git clone https://github.com/tosin2013/agnosticd-v2 /home/vpcuser/agnosticd-v2"
+
+  - name: "Clone odh-gitops (rhoai-devtest branch)"
+    check: "test -d /home/vpcuser/odh-gitops"
+    action: "git clone https://github.com/opendatahub-io/odh-gitops /home/vpcuser/odh-gitops && cd /home/vpcuser/odh-gitops && git checkout rhoai-devtest"
+
+  - name: "Run agd setup"
+    check: "test -f /home/vpcuser/agnosticd-v2/.setup-complete"
+    action: "cd /home/vpcuser/agnosticd-v2 && ./bin/agd setup"
+
+  - name: "Create vars and secrets directories"
+    check: "test -d /home/vpcuser/agnosticd-v2-vars"
+    action: "mkdir -p /home/vpcuser/agnosticd-v2-vars /home/vpcuser/agnosticd-v2-secrets"
+
+  - name: "Copy vars files from bootstrap repo"
+    check: "test -f /home/vpcuser/agnosticd-v2-vars/rhoai-aws.yml"
+    action: "cp /home/vpcuser/openshift-ai-bootstrap/agnosticd-v2-vars/*.yml /home/vpcuser/agnosticd-v2-vars/"
+
+config:
+  output_file: "deploy/config.yml"
+  gitignore: true
+  prompts:
+    - key: cloud_provider
+      prompt: "Cloud provider"
+      default: "aws"
+      choices: ["aws", "gcp", "azure"]
+
+    - key: cloud_region
+      prompt: "Cloud region"
+      default: "us-east-2"
+
+    - key: ocp_version
+      prompt: "OpenShift version"
+      default: "4.22"
+
+    - key: agd_root
+      prompt: "AgnosticD v2 root path"
+      default: "/home/vpcuser/agnosticd-v2"
+
+    - key: account
+      prompt: "Account name (matches secrets filename, e.g. sandbox1234)"
+      default: "sandbox"
+      required: true
+
+validation:
+  - name: "agd binary found"
+    command: "test -x /home/vpcuser/agnosticd-v2/bin/agd"
+    required: true
+    fail_message: "agd binary not found. Run setup_steps first."
+
+  - name: "Secrets file exists"
+    command: "test -f /home/vpcuser/agnosticd-v2-secrets/secrets.yml"
+    required: true
+    fail_message: >-
+      Secrets file not found. Create /home/vpcuser/agnosticd-v2-secrets/secrets.yml
+      from the template at agnosticd-v2-vars/secrets-template.yml
+
+  - name: "RHOAI vars file exists for chosen provider"
+    command: "test -f /home/vpcuser/agnosticd-v2-vars/rhoai-${cloud_provider}.yml"
+    required: true
+    fail_message: "RHOAI vars file not found for provider: ${cloud_provider}"
+
+post_setup:
+  message: |
+    Setup complete! Next steps:
+      1. Create secrets: cp agnosticd-v2-vars/secrets-template.yml \
+           /home/vpcuser/agnosticd-v2-secrets/secrets.yml
+         (edit to fill in pull_secret and cloud credentials)
+
+      2. Check quota:   ./scripts/check-quota.sh aws us-east-2
+
+      3. Track progress: spec status
+
+      4. Deploy AWS:    agd provision \
+           --vars /home/vpcuser/agnosticd-v2-vars/rhoai-aws.yml \
+           --secrets /home/vpcuser/agnosticd-v2-secrets/
+
+      5. Verify RHOAI:  oc get datasciencecluster -n redhat-ods-operator

@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_rhoai
+  author: tosin2013
+  description: >-
+    Install Red Hat OpenShift AI (RHOAI) on OCP 4.x using Argo CD and the
+    rhai-on-openshift-chart Helm chart. Supports GPU nodes via NFD and
+    NVIDIA GPU Operator. Compatible with AWS, GCP, and Azure.
+  license: Apache-2.0
+  min_ansible_version: "2.14"
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+
+dependencies: []

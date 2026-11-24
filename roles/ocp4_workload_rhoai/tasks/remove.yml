@@ -1,0 +1,36 @@
+---
+# Removal tasks for ocp4_workload_rhoai
+
+- name: Delete RHOAI Argo CD Application
+  kubernetes.core.k8s:
+    state: absent
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: rhoai
+    namespace: "{{ ocp4_workload_rhoai_argocd_namespace }}"
+
+- name: Wait for RHOAI resources to be pruned by Argo CD
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: Delete RHOAI operator namespace
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Namespace
+    name: "{{ ocp4_workload_rhoai_operator_namespace }}"
+
+- name: Delete DataScienceCluster if still present
+  kubernetes.core.k8s:
+    state: absent
+    api_version: datasciencecluster.opendatahub.io/v1
+    kind: DataScienceCluster
+  ignore_errors: true
+
+- name: Delete RHOAI Argo CD registry secret
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Secret
+    name: rhoai-chart-registry
+    namespace: "{{ ocp4_workload_rhoai_argocd_namespace }}"
