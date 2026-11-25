@@ -15,8 +15,10 @@ agnosticd_dynamic_role_git_sources:
     version: main
 
 # Workloads applied after cluster provisioning
+# cert_manager deferred — OLM catalog source not synced on fresh cluster;
+# RHOAI default profile sets certManager dependency to auto (not required for default).
+# Add back as follow-up: ocp4_workload_cert_manager
 workloads:
-  - ocp4_workload_cert_manager
   - ocp4_workload_machinesets
   - ocp4_workload_openshift_gitops
   - ocp4_workload_rhoai
