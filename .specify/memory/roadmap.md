@@ -1,26 +1,39 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.0.1 → 1.0.2
+Bump rationale: PATCH — status transition: 002 implemented → verified.
+  Stale ansible-lint note in 002 entry updated to reflect passing lint.
+  Debrief report debrief-2026-11-24T3.md confirmed ✅ PROCEED (0 Must-Address
+  findings, 8/8 tasks checked, ansible-lint production profile pass,
+  dep 001 satisfied).
+
+Changes this revision:
+  - Status: 002 implemented → verified
+  - Notes: 002 stale ansible-lint note updated
+
+Specs affected: 002
+Open questions added/resolved: none
+
+Notes: 002 verified on 2026-11-25. Unblocks 003, 004, and 005 simultaneously.
+
+--- Prior revision (1.0.1, 2026-11-24) ---
+Version change: 1.0.0 → 1.0.1
+Bump rationale: PATCH — status transition only: 001 implemented → verified.
+  Debrief report debrief-2026-11-24T2.md confirmed ✅ PROCEED (0 Must-Address
+  findings, 5/5 tasks checked, no dependencies, no diagnostics).
+Changes: Status: 001 implemented → verified.
+Notes: 001 verified on 2026-11-24. Cleared SS_DEPENDENCY_BLOCKED on 002.
+
+--- Prior revision (1.0.0, 2026-11-24) ---
 Version change: (none) → 1.0.0
 Bump rationale: MINOR — initial formal issue; promoted from hand-written
   minimal format to full template structure. All six entries enriched with
   description, outcome, scope, notes, and constraints. No entry removed
   or restated.
-
-Changes this revision:
-  - Promoted hand-written roadmap to template-compliant structure
-  - Added Vision & End States
-  - Added Constraints & Decisions C-01 through C-06
-  - Enriched all six Planned Specs entries with required fields
-  - Added Open Questions Q1 and Q2
-  - Added Cross-Cutting Notes
-
-Specs affected: 001, 002, 003, 004, 005, 006
-Open questions added/resolved: Q1 and Q2 added
-
-Notes: Roadmap previously hand-authored as a minimal spec-status-compatible
-  file. This revision adds governance context from the session in which the
-  project was created (2026-11-24).
+Changes: Promoted hand-written roadmap; added Vision & End States;
+  Constraints & Decisions C-01 through C-06; enriched all six entries;
+  Open Questions Q1 and Q2; Cross-Cutting Notes.
 -->
 
 # openshift-ai-bootstrap — Spec Roadmap
@@ -74,7 +87,7 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ## Planned Specs
 
-### 001 — AgnosticD Infra Project Scaffold  [status: implemented]
+### 001 — AgnosticD Infra Project Scaffold  [status: verified]
 
 - **Description:** Clone and configure the agnosticd-v2 fork and odh-gitops
   repo; scaffold the openshift-ai-bootstrap project with onboard.yml,
@@ -94,7 +107,7 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 - **Governed by:** C-06
 - **Spec dir:** specs/001-agnosticd-infra-project
 
-### 002 — ocp4_workload_rhoai Ansible Role  [status: implemented]
+### 002 — ocp4_workload_rhoai Ansible Role  [status: verified]
 
 - **Description:** Author the ocp4_workload_rhoai Ansible role in
   agnosticd-v2/ansible/roles/. The role installs RHOAI on an existing OCP
@@ -114,9 +127,10 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 - **Depends on:** 001
 - **Governed by:** C-02, C-03, C-04, C-05
 - **Spec dir:** specs/002-ocp4-workload-rhoai-role
-- **Notes:** One task remains unchecked: ansible-lint against the agnosticd EE
-  image (`specs/002-ocp4-workload-rhoai-role/tasks.md:10`). The
-  `gitops_branch` default is `rhoai-devtest` per C-05.
+- **Notes:** ansible-lint passes at production profile (0 failures, 0 warnings,
+  verified 2026-11-25). Registry credentials preflight assert added (F1 fix).
+  stop/start/status lifecycle handlers added (F2 fix). `gitops_branch` default
+  is `rhoai-devtest` per C-05.
 
 ### 003 — AWS Deployment (OCP 4.22 + RHOAI + GPU)  [status: planned]
 
@@ -207,4 +221,4 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-24
+**Version**: 1.0.2 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-25
