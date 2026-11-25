@@ -150,6 +150,27 @@ validation:
       base_domain is not set or still has placeholder value in secrets-${account}.yml.
       Set it to your sandbox base domain, e.g.: base_domain: sandbox1044.opentlc.com
 
+  - name: "ocp4_pull_secret is set (not placeholder)"
+    command: >-
+      grep -q 'ocp4_pull_secret:' /home/vpcuser/agnosticd-v2-secrets/secrets.yml &&
+      ! grep -q 'Add Your Pull Secret' /home/vpcuser/agnosticd-v2-secrets/secrets.yml
+    required: true
+    fail_message: >-
+      ocp4_pull_secret is missing or still has the placeholder value in secrets.yml.
+      Get your pull secret from https://console.redhat.com/openshift/install/pull-secret
+      and set ocp4_pull_secret in ~/agnosticd-v2-secrets/secrets.yml
+
+  - name: "RHOAI registry credentials are set (not placeholder)"
+    command: >-
+      grep -q 'ocp4_workload_rhoai_registry_username:' /home/vpcuser/agnosticd-v2-secrets/secrets.yml &&
+      ! grep -q 'registry-service-account' /home/vpcuser/agnosticd-v2-secrets/secrets.yml
+    required: true
+    fail_message: >-
+      Registry credentials are missing or still have placeholder values in secrets.yml.
+      Get a registry service account from https://access.redhat.com/terms-based-registry/
+      and set ocp4_workload_rhoai_registry_username and ocp4_workload_rhoai_registry_password
+      in ~/agnosticd-v2-secrets/secrets.yml
+
 post_setup:
   message: |
     Setup complete! Next steps:
