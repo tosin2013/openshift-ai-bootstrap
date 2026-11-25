@@ -29,3 +29,8 @@ ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
 
 worker_instance_type: Standard_D16s_v3
 worker_instance_count: 3
+
+# Validation role settings — matches Standard_NC6s_v3 (1× NVIDIA V100)
+ocp4_workload_validate_rhoai_gpu_instance_type: "Standard_NC6s_v3"
+ocp4_workload_validate_rhoai_gpu_vendor_pci_id: "10de"  # NVIDIA
+ocp4_workload_validate_rhoai_gpu_min_count: 1

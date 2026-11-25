@@ -82,3 +82,8 @@ cloud_tags:
   config: openshift-cluster
   guid: "{{ guid }}"
   env_type: openshift-cluster
+
+# Validation role settings — matches g4dn.xlarge (1× NVIDIA T4)
+ocp4_workload_validate_rhoai_gpu_instance_type: "g4dn.xlarge"
+ocp4_workload_validate_rhoai_gpu_vendor_pci_id: "10de"  # NVIDIA
+ocp4_workload_validate_rhoai_gpu_min_count: 1

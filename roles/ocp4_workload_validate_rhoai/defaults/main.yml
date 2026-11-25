@@ -13,3 +13,18 @@ ocp4_workload_validate_rhoai_check_delay: 15
 
 # Set to false to skip GPU checks (non-GPU deployments)
 ocp4_workload_validate_rhoai_check_gpu: true
+
+# GPU vendor PCI ID for NFD label check.
+# NVIDIA = 10de (default), AMD = 1002, Intel = 8086
+# Maps to: feature.node.kubernetes.io/pci-<vendor_pci_id>.present=true
+ocp4_workload_validate_rhoai_gpu_vendor_pci_id: "10de"
+
+# Minimum total nvidia.com/gpu allocatable across ALL GPU nodes.
+# g4dn.xlarge (1 GPU) with 1 replica = 1 (default)
+# g4dn.12xlarge (4 GPUs) with 1 replica = 4  → set to 4
+# g5.12xlarge (4 A10G) with 2 replicas = 8   → set to 8
+ocp4_workload_validate_rhoai_gpu_min_count: 1
+
+# Instance type label for the report (informational only)
+# Set in vars file to match your deployment: g4dn.xlarge, g5.xlarge, etc.
+ocp4_workload_validate_rhoai_gpu_instance_type: "g4dn.xlarge"

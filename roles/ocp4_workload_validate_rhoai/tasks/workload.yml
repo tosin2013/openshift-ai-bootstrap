@@ -84,12 +84,12 @@
   when: ocp4_workload_validate_rhoai_check_gpu | bool
 
 # ── Check 4: GPU node has NFD NVIDIA PCI label ───────────────────────────────
-- name: Check 4 — GPU node has NFD NVIDIA PCI label
+- name: Check 4 — GPU node has NFD vendor PCI label ({{ ocp4_workload_validate_rhoai_gpu_vendor_pci_id }})
   kubernetes.core.k8s_info:
     api_version: v1
     kind: Node
     label_selectors:
-      - "feature.node.kubernetes.io/pci-10de.present=true"
+      - "feature.node.kubernetes.io/pci-{{ ocp4_workload_validate_rhoai_gpu_vendor_pci_id }}.present=true"
   register: ocp4_workload_validate_rhoai_gpu_node_label
   ignore_errors: true
   when: ocp4_workload_validate_rhoai_check_gpu | bool
@@ -154,8 +154,11 @@
          if (not ocp4_workload_validate_rhoai_check_gpu | bool
              or (ocp4_workload_validate_rhoai_all_nodes.resources | default([])
                  | map(attribute='status.allocatable') | select('defined')
-                 | map(attribute='nvidia.com/gpu', default='0') | map('int') | sum) > 0)
-         else ocp4_workload_validate_rhoai_failed + ['[FAIL] nvidia.com/gpu not allocatable on any node'] }}
+                 | map(attribute='nvidia.com/gpu', default='0') | map('int') | sum)
+                 >= ocp4_workload_validate_rhoai_gpu_min_count | int)
+         else ocp4_workload_validate_rhoai_failed +
+              ['[FAIL] nvidia.com/gpu count below minimum (need '
+               + (ocp4_workload_validate_rhoai_gpu_min_count | string) + ')'] }}
   when: ocp4_workload_validate_rhoai_check_gpu | bool
 
 # ── Check 7: GPU Operator pods Running ──────────────────────────────────────
@@ -221,6 +224,10 @@
     msg: |
       RHOAI Post-Deploy Validation
       ════════════════════════════
+      GPU instance:  {{ ocp4_workload_validate_rhoai_gpu_instance_type }}
+      GPU vendor:    PCI {{ ocp4_workload_validate_rhoai_gpu_vendor_pci_id }} (10de=NVIDIA, 1002=AMD)
+      GPU count:     {{ ocp4_workload_validate_rhoai_gpu_count | default('n/a') }} (min required: {{ ocp4_workload_validate_rhoai_gpu_min_count }})
+
       {% for result in ocp4_workload_validate_rhoai_results %}
       {{ result }}
       {% endfor %}
