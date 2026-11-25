@@ -30,9 +30,6 @@ ocp4_workload_cert_manager_install_ingress_certificates: false
 ocp4_workload_cert_manager_install_api_certificates: false
 
 # GPU node pool — g4dn.xlarge (1× NVIDIA T4)
-# GPU node is already Ready — disable wait to avoid timeout
-ocp4_workload_machinesets_wait_for_nodes: false
-
 ocp4_workload_machinesets_machineset_groups:
   - name: gpu
     instance_type: g4dn.xlarge

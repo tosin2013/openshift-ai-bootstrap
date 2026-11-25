@@ -12,6 +12,25 @@
       must be set. Supply them via agnosticd-v2-secrets/secrets.yml —
       never hard-code credentials in vars files.
 
+# ── 0b. Wait for GPU node to be Ready (if GPU is enabled) ───────────────────
+- name: Wait for at least one GPU-labeled node to be Ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+    label_selectors:
+      - "nvidia.com/gpu=true"
+  register: ocp4_workload_rhoai_gpu_nodes
+  until:
+    - ocp4_workload_rhoai_gpu_nodes.resources | length > 0
+    - ocp4_workload_rhoai_gpu_nodes.resources | selectattr('status.conditions', 'defined')
+      | map(attribute='status.conditions')
+      | map('selectattr', 'type', 'equalto', 'Ready')
+      | map('selectattr', 'status', 'equalto', 'True')
+      | map('list') | select('ne', []) | list | length > 0
+  retries: 60
+  delay: 30
+  when: ocp4_workload_rhoai_gpu_enabled | bool
+
 # ── 1. Install Helm v4 on the bastion ───────────────────────────────────────
 - name: Create temp directory for Helm download
   ansible.builtin.tempfile:
