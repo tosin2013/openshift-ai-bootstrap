@@ -7,6 +7,11 @@
 - [x] Fill ~/agnosticd-v2-secrets/secrets.yml: set ocp4_pull_secret (console.redhat.com) and ocp4_workload_rhoai_registry_username/password (access.redhat.com/terms-based-registry/)
 - [x] Confirm ~/agnosticd-v2-secrets/secrets-zppkh.yml has base_domain: sandbox1044.opentlc.com and AWS credentials set
 - [x] Run check-quota.sh for AWS
+- [ ] Grant ArgoCD cluster-admin for RHOAI cluster-scoped CRDs (DataScienceCluster + DSCInitialization):
+      oc create clusterrolebinding openshift-gitops-rhoai-admin \
+        --clusterrole=cluster-admin \
+        --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller
+      (now automated in ocp4_workload_rhoai role — required for future deployments)
 - [ ] Run: cd ~/agnosticd-v2 && ./bin/agd provision --guid rhoai01 --config openshift-cluster --account zppkh
 - [ ] Verify DataScienceCluster reaches Ready: oc get datasciencecluster -n redhat-ods-operator
 - [ ] Verify RHOAI dashboard accessible: oc get route rhods-dashboard -n redhat-ods-applications

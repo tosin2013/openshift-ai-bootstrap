@@ -124,6 +124,26 @@
         username: "{{ ocp4_workload_rhoai_registry_username | default(registry_username | default('')) }}"
         password: "{{ ocp4_workload_rhoai_registry_password | default(registry_password | default('')) }}"
 
+# ── 4b. Grant Argo CD cluster-admin for RHOAI cluster-scoped CRDs ───────────
+# DataScienceCluster and DSCInitialization are cluster-scoped resources.
+# The ArgoCD application-controller needs cluster-admin to create them.
+- name: Grant Argo CD application-controller cluster-admin for RHOAI CRDs
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: openshift-gitops-rhoai-admin
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+        - kind: ServiceAccount
+          name: openshift-gitops-argocd-application-controller
+          namespace: "{{ ocp4_workload_rhoai_argocd_namespace }}"
+
 # ── 5. Create Argo CD Application CR for RHOAI chart ───────────────────────
 - name: Create RHOAI Argo CD Application
   kubernetes.core.k8s:
