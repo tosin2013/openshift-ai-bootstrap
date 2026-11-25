@@ -1,18 +1,28 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.2 → 1.0.3
-Bump rationale: PATCH — status transition: 003 planned → in-progress.
-  Dependency 002 is verified; AWS deployment spec is now actively being worked.
+Version change: 1.0.3 → 1.1.0
+Bump rationale: MINOR — vision clarification (user-workload framing added as
+  a primary end-state) and new spec 007 (CI version-drift detection).
 
 Changes this revision:
-  - Status: 003 planned → in-progress
+  - Vision & End States: added user-workload end-state as the primary goal
+  - Added spec 007 — CI Version-Drift Detection [status: planned]
 
-Specs affected: 003
+Specs affected: 007 (new)
 Open questions added/resolved: none
 
-Notes: 003 moved to in-progress on 2026-11-25. Q1 (OCP 4.22 channel) and
-  Q2 (GCP accelerator field) remain open for resolution during this spec.
+Notes: User clarified on 2026-11-25 that the project's primary purpose is
+  RHOAI as a managed AI/ML platform for end users to run workloads. The
+  provisioning pipeline is the means; user-accessible RHOAI is the end.
+  Spec 007 adds automated version-drift detection so the pinned OCP and
+  RHOAI versions never silently fall behind new releases.
+
+--- Prior revision (1.0.3, 2026-11-25) ---
+Version change: 1.0.2 → 1.0.3
+Bump rationale: PATCH — status transition: 003 planned → in-progress.
+Changes: Status: 003 planned → in-progress.
+Notes: 003 moved to in-progress on 2026-11-25.
 
 --- Prior revision (1.0.2, 2026-11-25) ---
 Version change: 1.0.1 → 1.0.2
@@ -59,12 +69,19 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ## Vision & End States
 
+- **Primary goal:** RHOAI serves as a managed AI/ML platform that end users log
+  into and run their own workloads — notebooks, pipelines, model serving — on
+  GPU-enabled OCP clusters. The provisioning pipeline is the means; a working,
+  user-accessible RHOAI environment is the end.
 - Engineers and Red Hat field teams can provision a fully operational RHOAI
   environment on OCP 4.22 — with GPU support — on AWS, GCP, or Azure by running
   a single `agd provision` command against a cloud-provider vars file.
 - Each cloud-provider deployment is a discrete, verifiable spec tracked by
   speckit-roadmap: a spec unblocks only after its upstream role is recorded
   verified.
+- The pinned OCP and RHOAI versions are tracked by CI: a weekly workflow detects
+  drift against new upstream releases and opens a GitHub issue so maintainers can
+  decide whether to update and re-validate.
 - OCP 5 support is planned and unblocks when AgnosticD confirms stable installer
   support for OCP 5.
 
@@ -204,6 +221,31 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 - **Notes:** Blocked on confirmation that the agd CLI supports an OCP 5 installer
   config. Revisit when OCP 5 GA and AgnosticD support are confirmed.
 
+### 007 — CI Version-Drift Detection  [status: planned]
+
+- **Description:** GitHub Actions scheduled workflow (weekly) that compares the
+  pinned versions in the repo — OCP installer version, rhai-on-openshift-chart
+  OCI tag, and odh-gitops `rhoai-devtest` branch commit SHA — against the latest
+  published releases, and opens a GitHub issue when drift is detected.
+- **Outcome:** The repo never silently falls behind a new OCP or RHOAI release.
+  When a new version is available, a GitHub issue is opened automatically with a
+  diff table showing current vs. latest, so the maintainer can decide whether to
+  update and re-run spec 003. No auto-merging or auto-deploy.
+- **Scope (in):** `.github/workflows/version-check.yml` scheduled weekly; OCP
+  release check (`quay.io/openshift-release-dev/ocp-release` tags); RHOAI chart
+  check (`registry.redhat.io/rhai` OCI tags); odh-gitops branch check (GitHub
+  API last commit SHA on `rhoai-devtest`); GitHub issue creation on drift.
+- **Scope (out):** Auto-bumping pinned versions; triggering an automatic re-deploy
+  on version change; Dependabot-style PRs (human decision required for all bumps).
+- **Depends on:** 003
+- **Notes:** Pinned values in `vars/rhoai-aws.yml` (`host_ocp4_installer_version`)
+  and `roles/ocp4_workload_rhoai/defaults/main.yml` (`ocp4_workload_rhoai_chart_version`)
+  are the sources of truth. The workflow compares these against upstream and flags
+  drift. A bump in any pinned value requires a re-run of the affected cloud
+  deployment spec to verify the new version works end-to-end before closing the
+  issue.
+- **Spec dir:** specs/007-ci-version-drift
+
 ## Open Questions
 
 - **Q1** — Does rhai-on-openshift-chart v3.4 require the RHOAI operator channel
@@ -228,4 +270,4 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ---
 
-**Version**: 1.0.3 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-25
+**Version**: 1.1.0 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-25
