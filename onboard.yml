@@ -114,7 +114,7 @@ config:
 
     - key: account
       prompt: "Account name (matches secrets filename, e.g. sandbox1234)"
-      default: "sandbox"
+      default: "zppkh"
       required: true
 
 validation:
