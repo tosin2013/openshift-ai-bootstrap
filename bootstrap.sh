@@ -404,10 +404,29 @@ run_setup_steps() {
 
 # ─── Phase: Configuration ───────────────────────────────────────────────────
 
+# Load previously saved config values so re-runs preserve user choices
+load_saved_config() {
+    local output_file
+    output_file="$(manifest_get ".config.output_file")"
+    if [[ -n "$output_file" && -f "$output_file" ]]; then
+        while IFS=': ' read -r key val || [[ -n "$key" ]]; do
+            [[ "$key" =~ ^#  ]] && continue
+            [[ -z "$key" ]] && continue
+            # strip leading/trailing whitespace from value
+            val="${val#"${val%%[![:space:]]*}"}"
+            val="${val%"${val##*[![:space:]]}"}"
+            VARS["$key"]="$val"
+        done < "$output_file"
+    fi
+}
+
 configure() {
     local count
     count="$(manifest_len ".config.prompts")"
     if (( count == 0 )); then return 0; fi
+
+    # Seed VARS from prior run if config file exists
+    load_saved_config
 
     echo ""
     echo -e "${BOLD}--- Configuration ---${RESET}"
@@ -417,7 +436,8 @@ configure() {
     for (( i=0; i<count; i++ )); do
         key="$(manifest_get ".config.prompts[$i].key")"
         prompt_text="$(manifest_get ".config.prompts[$i].prompt")"
-        default_val="$(manifest_get ".config.prompts[$i].default")"
+        # Use saved value as default if present, otherwise fall back to manifest default
+        default_val="${VARS[$key]:-$(manifest_get ".config.prompts[$i].default")}"
         required="$(manifest_get ".config.prompts[$i].required")"
         choices="$(manifest_get ".config.prompts[$i].choices")"
 
