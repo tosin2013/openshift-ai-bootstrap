@@ -41,19 +41,21 @@ prerequisites:
 
   - name: gcloud
     check_command: "gcloud --version"
+    required: false
     install:
       rhel9: "sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOF\n[google-cloud-cli]\nname=Google Cloud CLI\nbaseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64\nenabled=1\ngpgcheck=1\nrepodata-gpg-check=0\ngpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg\nEOF\nsudo dnf install -y google-cloud-cli"
       rhel10: "sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOF\n[google-cloud-cli]\nname=Google Cloud CLI\nbaseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64\nenabled=1\ngpgcheck=1\nrepodata-gpg-check=0\ngpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg\nEOF\nsudo dnf install -y google-cloud-cli"
       macos: "brew install --cask google-cloud-sdk"
-    note: "Required for GCP deployments only (spec 004)"
+    note: "Required for GCP deployments only (spec 004) — skip if deploying AWS only"
 
   - name: az
     check_command: "az --version"
+    required: false
     install:
       rhel9: "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && sudo dnf install -y https://packages.microsoft.com/config/rhel/9.0/packages-microsoft-prod.rpm && sudo dnf install -y azure-cli"
-      rhel10: "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && sudo dnf install -y azure-cli"
+      rhel10: "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash || pip3 install --user azure-cli"
       macos: "brew install azure-cli"
-    note: "Required for Azure deployments only (spec 005)"
+    note: "Required for Azure deployments only (spec 005) — skip if deploying AWS only"
 
   - name: agd
     check_command: "test -x /home/vpcuser/agnosticd-v2/bin/agd"
