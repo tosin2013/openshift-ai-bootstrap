@@ -1,28 +1,31 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.3 → 1.1.0
-Bump rationale: MINOR — vision clarification (user-workload framing added as
-  a primary end-state) and new spec 007 (CI version-drift detection).
+Version change: 1.1.1 → 1.1.2
+Bump rationale: PATCH — 003 in-progress → verified. All 8 validation checks
+  passed manually on live AWS deployment (2026-11-26): DataScienceCluster Ready,
+  dashboard HTTP 301, NFD NodeFeatureDiscovery, CUDA driver label, ClusterPolicy
+  ready, nvidia.com/gpu=1, GPU Operator pods Running, RHOAI pods Running.
 
 Changes this revision:
-  - Vision & End States: added user-workload end-state as the primary goal
-  - Added spec 007 — CI Version-Drift Detection [status: planned]
+  - Status: 003 in-progress → verified
+  - Notes: 003 updated with deployment-time lessons
 
-Specs affected: 007 (new)
-Open questions added/resolved: none
+Specs affected: 003
+Open questions added/resolved: Q1 (OLM channel) — resolved: stable-v1 channel
+  correct on OCP 4.22 (stable-v1.15 does not exist).
 
-Notes: User clarified on 2026-11-25 that the project's primary purpose is
-  RHOAI as a managed AI/ML platform for end users to run workloads. The
-  provisioning pipeline is the means; user-accessible RHOAI is the end.
-  Spec 007 adds automated version-drift detection so the pinned OCP and
-  RHOAI versions never silently fall behind new releases.
+Notes: First successful RHOAI deployment on AWS. Release candidate for v0.1.0-aws.
 
---- Prior revision (1.0.3, 2026-11-25) ---
+--- Prior revision (1.1.1, 2026-11-26) ---
 Version change: 1.0.3 → 1.1.1
 Bump rationale: MINOR — added spec 008 (RHOAI Post-Deploy Validation) + 003 in-progress.
-Changes: Status: 003 planned → in-progress.
-Notes: 003 moved to in-progress on 2026-11-25.
+Changes: Status: 003 planned → in-progress; spec 008 added.
+
+--- Prior revision (1.1.0, 2026-11-25) ---
+Version change: 1.0.3 → 1.1.0
+Bump rationale: MINOR — vision clarification (user-workload framing) + spec 007.
+Changes: Vision updated; spec 007 added.
 
 --- Prior revision (1.0.2, 2026-11-25) ---
 Version change: 1.0.1 → 1.0.2
@@ -156,7 +159,7 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   stop/start/status lifecycle handlers added (F2 fix). `gitops_branch` default
   is `rhoai-devtest` per C-05.
 
-### 003 — AWS Deployment (OCP 4.22 + RHOAI + GPU)  [status: in-progress]
+### 003 — AWS Deployment (OCP 4.22 + RHOAI + GPU)  [status: verified]
 
 - **Description:** Provision an OCP 4.22 cluster on AWS using the
   `openshift-cluster` AgnosticD deployer, then apply ocp4_workload_rhoai to
@@ -172,6 +175,14 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 - **Depends on:** 002
 - **Governed by:** C-01, C-02, C-03, C-04
 - **Spec dir:** specs/003-aws-deployment
+- **Notes:** Verified 2026-11-26. Deployment-time lessons: (1) ArgoCD app-controller
+  needs ClusterRoleBinding cluster-admin for DataScienceCluster + DSCInitialization
+  (now in role); (2) RHOAI chart installs operators but not operands — NFD
+  NodeFeatureDiscovery and GPU Operator ClusterPolicy must be created separately
+  (now in role); (3) chart schema requires explicit managementState: Removed for all
+  components; (4) cert-manager channel stable-v1.15 does not exist on OCP 4.22 —
+  use stable-v1 (Q1 resolved); (5) bastion must use RHUI marketplace image (Hourly2)
+  not GOLD image. All lessons automated in ocp4_workload_rhoai role.
 
 ### 004 — GCP Deployment (OCP 4.22 + RHOAI + GPU)  [status: planned]
 
@@ -266,9 +277,9 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ## Open Questions
 
-- **Q1** — Does rhai-on-openshift-chart v3.4 require the RHOAI operator channel
-  to be `stable` instead of `beta` on OCP 4.22? The channel is set to `beta` in
-  odh-gitops values.yaml. Resolution: check the chart's OLM Subscription template
+- **Q1** ~~Does rhai-on-openshift-chart v3.4 require the RHOAI operator channel
+  to be `stable` instead of `beta` on OCP 4.22?~~ **RESOLVED 2026-11-26:** channel `stable-v1`
+  is correct on OCP 4.22. cert-manager channel stable-v1.15 does not exist — use stable-v1.
   when deploying spec 003.
 - **Q2** — Does ocp4_workload_machinesets support the GCP `accelerator` field for
   GPU node pools, or does it require a custom MachineSet manifest? Resolution:
@@ -288,4 +299,4 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ---
 
-**Version**: 1.1.1 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-26
+**Version**: 1.1.2 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-26
