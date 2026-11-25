@@ -1,21 +1,28 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.0.2 → 1.0.3
+Bump rationale: PATCH — status transition: 003 planned → in-progress.
+  Dependency 002 is verified; AWS deployment spec is now actively being worked.
+
+Changes this revision:
+  - Status: 003 planned → in-progress
+
+Specs affected: 003
+Open questions added/resolved: none
+
+Notes: 003 moved to in-progress on 2026-11-25. Q1 (OCP 4.22 channel) and
+  Q2 (GCP accelerator field) remain open for resolution during this spec.
+
+--- Prior revision (1.0.2, 2026-11-25) ---
 Version change: 1.0.1 → 1.0.2
 Bump rationale: PATCH — status transition: 002 implemented → verified.
   Stale ansible-lint note in 002 entry updated to reflect passing lint.
   Debrief report debrief-2026-11-24T3.md confirmed ✅ PROCEED (0 Must-Address
   findings, 8/8 tasks checked, ansible-lint production profile pass,
   dep 001 satisfied).
-
-Changes this revision:
-  - Status: 002 implemented → verified
-  - Notes: 002 stale ansible-lint note updated
-
-Specs affected: 002
-Open questions added/resolved: none
-
-Notes: 002 verified on 2026-11-25. Unblocks 003, 004, and 005 simultaneously.
+Changes: Status: 002 implemented → verified; 002 notes updated.
+Notes: 002 verified on 2026-11-25. Unblocked 003, 004, and 005.
 
 --- Prior revision (1.0.1, 2026-11-24) ---
 Version change: 1.0.0 → 1.0.1
@@ -132,7 +139,7 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   stop/start/status lifecycle handlers added (F2 fix). `gitops_branch` default
   is `rhoai-devtest` per C-05.
 
-### 003 — AWS Deployment (OCP 4.22 + RHOAI + GPU)  [status: planned]
+### 003 — AWS Deployment (OCP 4.22 + RHOAI + GPU)  [status: in-progress]
 
 - **Description:** Provision an OCP 4.22 cluster on AWS using the
   `openshift-cluster` AgnosticD deployer, then apply ocp4_workload_rhoai to
@@ -221,4 +228,4 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ---
 
-**Version**: 1.0.2 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-25
+**Version**: 1.0.3 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-25
