@@ -30,6 +30,12 @@ ocp4_workload_cert_manager_install_ingress_certificates: false
 ocp4_workload_cert_manager_install_api_certificates: false
 
 # GPU node pool — g4dn.xlarge (1× NVIDIA T4)
+# Disable machineset's built-in node wait — it fails instantly when the node already
+# exists (the wait condition checks MachineSet status, not actual node Ready state).
+# ocp4_workload_rhoai has its own GPU taint readiness gate that correctly verifies
+# the node is Ready before proceeding with RHOAI chart deployment.
+ocp4_workload_machinesets_wait_for_nodes: false
+
 ocp4_workload_machinesets_machineset_groups:
   - name: gpu
     instance_type: g4dn.xlarge
