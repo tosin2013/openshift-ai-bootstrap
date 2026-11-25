@@ -147,6 +147,16 @@ validation:
       Create it: cp ~/agnosticd-v2-secrets/secrets-sandboxXXX.yml ~/agnosticd-v2-secrets/secrets-${account}.yml
       Fill in: aws_access_key_id, aws_secret_access_key, base_domain (e.g. sandbox1044.opentlc.com)
 
+  - name: "AWS credentials set in per-account secrets (not placeholder)"
+    command: >-
+      grep -q 'aws_access_key_id:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
+      ! grep -q 'Your AWS Access Key' ~/agnosticd-v2-secrets/secrets-${account}.yml
+    required: true
+    fail_message: >-
+      AWS credentials are missing or still have placeholder values in secrets-${account}.yml.
+      Copy from your configured AWS CLI: aws configure get aws_access_key_id
+      Set aws_access_key_id and aws_secret_access_key in ~/agnosticd-v2-secrets/secrets-${account}.yml
+
   - name: "base_domain set in per-account secrets"
     command: "grep -v 'sandboxXXX' ~/agnosticd-v2-secrets/secrets-${account}.yml | grep -q 'base_domain:'"
     required: true
