@@ -229,6 +229,79 @@
             - CreateNamespace=true
             - SkipDryRunOnMissingResource=true
 
+# ── 5b. Create NFD and GPU Operator instances (if GPU enabled) ──────────────
+# The RHOAI chart installs the OLM subscriptions but not the operand CRs.
+# NFD needs NodeFeatureDiscovery to scan and label nodes.
+# GPU Operator needs ClusterPolicy to deploy drivers and device plugin.
+- name: Create NFD NodeFeatureDiscovery instance
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: nfd.openshift.io/v1
+      kind: NodeFeatureDiscovery
+      metadata:
+        name: nfd-instance
+        namespace: openshift-nfd
+      spec:
+        operand:
+          servicePort: 12000
+        workerConfig:
+          configData: |
+            core:
+              sleepInterval: 60s
+            sources:
+              pci:
+                deviceClassWhitelist:
+                  - "0200"
+                  - "03"
+                  - "12"
+              custom: []
+  when: ocp4_workload_rhoai_nfd_enabled | bool
+
+- name: Create GPU Operator ClusterPolicy
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: nvidia.com/v1
+      kind: ClusterPolicy
+      metadata:
+        name: gpu-cluster-policy
+      spec:
+        operator:
+          defaultRuntime: crio
+        daemonsets:
+          priorityClassName: system-node-critical
+          tolerations:
+            - key: nvidia.com/gpu
+              operator: Exists
+              effect: NoSchedule
+        devicePlugin:
+          enabled: true
+          config:
+            name: ""
+        driver:
+          enabled: true
+          rdma:
+            enabled: false
+        dcgm:
+          enabled: true
+        dcgmExporter:
+          enabled: true
+        gfd:
+          enabled: true
+        migManager:
+          enabled: true
+        nodeStatusExporter:
+          enabled: true
+        toolkit:
+          enabled: true
+        validator:
+          plugin:
+            env:
+              - name: WITH_WORKLOAD
+                value: "false"
+  when: ocp4_workload_rhoai_gpu_enabled | bool
+
 # ── 6. Wait for DataScienceCluster to reach Ready ───────────────────────────
 - name: Wait for RHOAI operator to install (CRDs to register)
   ansible.builtin.pause:
