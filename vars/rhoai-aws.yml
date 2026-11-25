@@ -15,8 +15,8 @@ agnosticd_dynamic_role_git_sources:
     version: main
 
 # Workloads applied after cluster provisioning
-# cert_manager removed — not needed for RHOAI default profile (no RHCL/Authorino)
 workloads:
+  - ocp4_workload_cert_manager
   - ocp4_workload_machinesets
   - ocp4_workload_openshift_gitops
   - ocp4_workload_rhoai
