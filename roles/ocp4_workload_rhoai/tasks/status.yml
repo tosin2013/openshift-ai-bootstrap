@@ -20,7 +20,7 @@
   failed_when: false
 
 - name: Report RHOAI status
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: |
       RHOAI Status:
         DataScienceCluster: {{ ocp4_workload_rhoai_dsc_status.resources | length > 0 | ternary('present', 'not found') }}

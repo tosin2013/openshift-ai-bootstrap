@@ -5,7 +5,7 @@
 # for RHDP cost-management compatibility.
 
 - name: RHOAI workload stop — no-op (cluster-level lifecycle)
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: >-
       RHOAI stop: no workload-level stop action required.
       RHOAI resumes automatically when the cluster starts.

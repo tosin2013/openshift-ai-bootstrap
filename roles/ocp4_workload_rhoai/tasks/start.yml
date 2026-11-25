@@ -6,7 +6,7 @@
 # RHDP cost-management compatibility.
 
 - name: RHOAI workload start — no-op (Argo CD self-heals on cluster start)
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: >-
       RHOAI start: no workload-level start action required.
       Argo CD (selfHeal: true) reconciles RHOAI automatically.

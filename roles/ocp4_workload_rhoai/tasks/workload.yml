@@ -203,7 +203,7 @@
 
 # ── 8. Emit agnosticd_user_info ──────────────────────────────────────────────
 - name: Print RHOAI access info
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: |
       Red Hat OpenShift AI (RHOAI) is installed and ready.
 
