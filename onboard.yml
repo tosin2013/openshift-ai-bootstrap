@@ -56,7 +56,7 @@ prerequisites:
     note: "Required for Azure deployments only (spec 005)"
 
   - name: agd
-    check_command: "/home/vpcuser/agnosticd-v2/bin/agd --version"
+    check_command: "test -x /home/vpcuser/agnosticd-v2/bin/agd"
     install:
       fallback: "git clone https://github.com/tosin2013/agnosticd-v2 /home/vpcuser/agnosticd-v2"
 
@@ -132,6 +132,21 @@ validation:
     command: "test -f /home/vpcuser/agnosticd-v2-vars/rhoai-${cloud_provider}.yml"
     required: true
     fail_message: "RHOAI vars file not found for provider: ${cloud_provider}"
+
+  - name: "Per-account secrets file exists"
+    command: "test -f /home/vpcuser/agnosticd-v2-secrets/secrets-${account}.yml"
+    required: true
+    fail_message: >-
+      Per-account secrets file not found: secrets-${account}.yml
+      Create it with: cp ~/agnosticd-v2-secrets/secrets-sandboxXXX.yml ~/agnosticd-v2-secrets/secrets-${account}.yml
+      Fill in: aws_access_key_id, aws_secret_access_key, base_domain (e.g. sandbox1044.opentlc.com)
+
+  - name: "base_domain set in per-account secrets"
+    command: "grep -v 'sandboxXXX' /home/vpcuser/agnosticd-v2-secrets/secrets-${account}.yml | grep -q 'base_domain:'"
+    required: true
+    fail_message: >-
+      base_domain is not set or still has placeholder value in secrets-${account}.yml.
+      Set it to your sandbox base domain, e.g.: base_domain: sandbox1044.opentlc.com
 
 post_setup:
   message: |

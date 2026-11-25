@@ -20,6 +20,9 @@ works end-to-end before GCP and Azure are attempted.
 - FR-05: The GPU node must report `nvidia.com/gpu` as an allocatable resource.
 - FR-06: `agnosticd_user_info` must emit the dashboard URL and profile.
 - FR-07: Teardown (`agd destroy`) must complete cleanly with no orphaned resources.
+- FR-08: A valid `base_domain` (the Route53 hosted zone delegated to the sandbox account)
+  must be configured in the per-account secrets file (`secrets-<account>.yml`) before
+  provisioning. Without it AgnosticD cannot create OCP cluster DNS records.
 
 ## Success Criteria
 
