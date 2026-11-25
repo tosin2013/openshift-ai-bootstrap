@@ -49,6 +49,9 @@ agnosticd_images:
   bastion:
     name: "RHEL-10.2.0_HVM-20261020-x86_64-0-Hourly2-GP3"
     image_id: "ami-05e4fe0cb43c83113"
+    platform_details: "Red Hat Enterprise Linux"
+    architecture: "x86_64"
+    description: "Provided by Red Hat, Inc."
 
 # Required for RHDP automated cleanup — missing tags orphan resources
 cloud_tags:
