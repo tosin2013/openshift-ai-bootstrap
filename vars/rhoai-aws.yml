@@ -11,7 +11,7 @@ host_ocp4_installer_version: "4.22"
 
 # Pull core_workloads collection (ocp4_workload_cert_manager, machinesets, openshift_gitops, etc.)
 agnosticd_dynamic_role_git_sources:
-  - name: https://github.com/rhpds/core_workloads.git
+  - repo: https://github.com/rhpds/core_workloads.git
     version: main
 
 # Workloads applied after cluster provisioning
