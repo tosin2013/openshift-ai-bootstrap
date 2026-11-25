@@ -150,7 +150,7 @@ validation:
   - name: "AWS credentials set in per-account secrets (not placeholder)"
     command: >-
       grep -q 'aws_access_key_id:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
-      ! grep -q 'Your AWS Access Key' ~/agnosticd-v2-secrets/secrets-${account}.yml
+      ! grep -qE '(Your AWS Access Key|<fill|<Your)' ~/agnosticd-v2-secrets/secrets-${account}.yml
     required: true
     fail_message: >-
       AWS credentials are missing or still have placeholder values in secrets-${account}.yml.
