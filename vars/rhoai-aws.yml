@@ -39,8 +39,13 @@ ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
 worker_instance_type: m6i.4xlarge
 worker_instance_count: 3
 
-# Disable Satellite registration — sandbox accounts use RHUI/pull-secret for repos
+# Disable Satellite registration — sandbox accounts don't have Satellite credentials
 install_satellite_repositories: false
+
+# GOLD AMI requires RHSM which sandbox accounts don't have.
+# Skip common packages on bastion — OCP installer doesn't require them.
+# Future: switch bastion_instance_image to a RHUI marketplace image for new deployments.
+install_common_packages: false
 
 # Required for RHDP automated cleanup — missing tags orphan resources
 cloud_tags:
