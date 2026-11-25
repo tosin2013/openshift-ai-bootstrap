@@ -38,3 +38,10 @@ ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
 # Cluster sizing (3 worker nodes minimum for RHOAI)
 worker_instance_type: m6i.4xlarge
 worker_instance_count: 3
+
+# Required for RHDP automated cleanup — missing tags orphan resources
+cloud_tags:
+  owner: "{{ email | default('unknown') }}"
+  config: openshift-cluster
+  guid: "{{ guid }}"
+  env_type: openshift-cluster

@@ -10,9 +10,6 @@ ocp4_workload_rhoai_operator_type: "rhoai"
 # RHOAI installation profile: default (base) or rhaii (distributed inference + llm-d)
 ocp4_workload_rhoai_profile: "default"
 
-# OCI registry for the chart
-ocp4_workload_rhoai_chart_registry: "oci://registry.redhat.io/rhai/rhai-on-openshift-chart"
-
 # Enable NFD (Node Feature Discovery) — required for GPU support
 ocp4_workload_rhoai_nfd_enabled: true
 
