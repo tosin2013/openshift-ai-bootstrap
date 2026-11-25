@@ -17,4 +17,4 @@
 - [x] Verify RHOAI dashboard accessible: oc get route rhods-dashboard -n redhat-ods-applications
 - [x] Verify GPU node has nvidia.com/gpu allocatable: oc get nodes -l nvidia.com/gpu=true
 - [x] Verify agnosticd_user_info emitted: check agnosticd-v2-output/rhoai01/ for user_info output with dashboard URL
-- [ ] Teardown test: cd ~/agnosticd-v2 && ./bin/agd destroy --guid rhoai01 --config openshift-cluster --account zppkh
+- [x] Teardown test: cd ~/agnosticd-v2 && ./bin/agd destroy --guid rhoai01 --config openshift-cluster --account zppkh
