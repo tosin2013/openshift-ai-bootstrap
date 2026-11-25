@@ -91,6 +91,10 @@ setup_steps:
     check: "test -f ~/agnosticd-v2-vars/rhoai-aws.yml"
     action: "cp vars/*.yml ~/agnosticd-v2-vars/"
 
+  - name: "Create openshift-cluster.yml (agd requires config-named vars file)"
+    check: "test -f ~/agnosticd-v2-vars/openshift-cluster.yml"
+    action: "cp ~/agnosticd-v2-vars/rhoai-aws.yml ~/agnosticd-v2-vars/openshift-cluster.yml"
+
 config:
   output_file: "deploy/config.yml"
   gitignore: true
