@@ -58,9 +58,9 @@ prerequisites:
     note: "Required for Azure deployments only (spec 005) — skip if deploying AWS only"
 
   - name: agd
-    check_command: "test -x /home/vpcuser/agnosticd-v2/bin/agd"
+    check_command: "test -x ~/agnosticd-v2/bin/agd"
     install:
-      fallback: "git clone https://github.com/tosin2013/agnosticd-v2 /home/vpcuser/agnosticd-v2"
+      fallback: "git clone https://github.com/tosin2013/agnosticd-v2 ~/agnosticd-v2"
 
   - name: spec
     check_command: "spec version"
@@ -72,24 +72,24 @@ prerequisites:
 
 setup_steps:
   - name: "Clone AgnosticD v2 fork (tosin2013)"
-    check: "test -d /home/vpcuser/agnosticd-v2"
-    action: "git clone https://github.com/tosin2013/agnosticd-v2 /home/vpcuser/agnosticd-v2"
+    check: "test -d ~/agnosticd-v2"
+    action: "git clone https://github.com/tosin2013/agnosticd-v2 ~/agnosticd-v2"
 
   - name: "Clone odh-gitops (rhoai-devtest branch)"
-    check: "test -d /home/vpcuser/odh-gitops"
-    action: "git clone https://github.com/opendatahub-io/odh-gitops /home/vpcuser/odh-gitops && cd /home/vpcuser/odh-gitops && git checkout rhoai-devtest"
+    check: "test -d ~/odh-gitops"
+    action: "git clone https://github.com/opendatahub-io/odh-gitops ~/odh-gitops && cd ~/odh-gitops && git checkout rhoai-devtest"
 
   - name: "Run agd setup"
-    check: "test -f /home/vpcuser/agnosticd-v2/.setup-complete"
-    action: "cd /home/vpcuser/agnosticd-v2 && ./bin/agd setup"
+    check: "test -d ~/agnosticd-v2-virtualenv"
+    action: "cd ~/agnosticd-v2 && ./bin/agd setup"
 
   - name: "Create vars and secrets directories"
-    check: "test -d /home/vpcuser/agnosticd-v2-vars"
-    action: "mkdir -p /home/vpcuser/agnosticd-v2-vars /home/vpcuser/agnosticd-v2-secrets"
+    check: "test -d ~/agnosticd-v2-vars"
+    action: "mkdir -p ~/agnosticd-v2-vars ~/agnosticd-v2-secrets"
 
   - name: "Copy vars files from bootstrap repo"
-    check: "test -f /home/vpcuser/agnosticd-v2-vars/rhoai-aws.yml"
-    action: "cp /home/vpcuser/openshift-ai-bootstrap/agnosticd-v2-vars/*.yml /home/vpcuser/agnosticd-v2-vars/"
+    check: "test -f ~/agnosticd-v2-vars/rhoai-aws.yml"
+    action: "cp vars/*.yml ~/agnosticd-v2-vars/"
 
 config:
   output_file: "deploy/config.yml"
@@ -110,50 +110,51 @@ config:
 
     - key: agd_root
       prompt: "AgnosticD v2 root path"
-      default: "/home/vpcuser/agnosticd-v2"
+      default: "~/agnosticd-v2"
 
     - key: account
-      prompt: "Account name (matches secrets filename, e.g. sandbox1234)"
-      default: "zppkh"
+      prompt: "Account name (matches secrets filename — e.g. sandbox1234 from demo.redhat.com)"
+      default: "sandbox"
       required: true
 
 validation:
   - name: "agd binary found"
-    command: "test -x /home/vpcuser/agnosticd-v2/bin/agd"
+    command: "test -x ~/agnosticd-v2/bin/agd"
     required: true
-    fail_message: "agd binary not found. Run setup_steps first."
+    fail_message: "agd binary not found. Run setup_steps first: cd ~/agnosticd-v2 && ./bin/agd setup"
 
   - name: "Secrets file exists"
-    command: "test -f /home/vpcuser/agnosticd-v2-secrets/secrets.yml"
+    command: "test -f ~/agnosticd-v2-secrets/secrets.yml"
     required: true
     fail_message: >-
-      Secrets file not found. Create /home/vpcuser/agnosticd-v2-secrets/secrets.yml
-      from the template at agnosticd-v2-vars/secrets-template.yml
+      Secrets file not found. Create ~/agnosticd-v2-secrets/secrets.yml
+      from the template: cp vars/secrets-template.yml ~/agnosticd-v2-secrets/secrets.yml
 
   - name: "RHOAI vars file exists for chosen provider"
-    command: "test -f /home/vpcuser/agnosticd-v2-vars/rhoai-${cloud_provider}.yml"
+    command: "test -f ~/agnosticd-v2-vars/rhoai-${cloud_provider}.yml"
     required: true
     fail_message: "RHOAI vars file not found for provider: ${cloud_provider}"
 
   - name: "Per-account secrets file exists"
-    command: "test -f /home/vpcuser/agnosticd-v2-secrets/secrets-${account}.yml"
+    command: "test -f ~/agnosticd-v2-secrets/secrets-${account}.yml"
     required: true
     fail_message: >-
       Per-account secrets file not found: secrets-${account}.yml
-      Create it with: cp ~/agnosticd-v2-secrets/secrets-sandboxXXX.yml ~/agnosticd-v2-secrets/secrets-${account}.yml
+      Create it: cp ~/agnosticd-v2-secrets/secrets-sandboxXXX.yml ~/agnosticd-v2-secrets/secrets-${account}.yml
       Fill in: aws_access_key_id, aws_secret_access_key, base_domain (e.g. sandbox1044.opentlc.com)
 
   - name: "base_domain set in per-account secrets"
-    command: "grep -v 'sandboxXXX' /home/vpcuser/agnosticd-v2-secrets/secrets-${account}.yml | grep -q 'base_domain:'"
+    command: "grep -v 'sandboxXXX' ~/agnosticd-v2-secrets/secrets-${account}.yml | grep -q 'base_domain:'"
     required: true
     fail_message: >-
       base_domain is not set or still has placeholder value in secrets-${account}.yml.
       Set it to your sandbox base domain, e.g.: base_domain: sandbox1044.opentlc.com
+      (Get the domain from your demo.redhat.com Open Environment details page)
 
   - name: "ocp4_pull_secret is set (not placeholder)"
     command: >-
-      grep -q 'ocp4_pull_secret:' /home/vpcuser/agnosticd-v2-secrets/secrets.yml &&
-      ! grep -q 'Add Your Pull Secret' /home/vpcuser/agnosticd-v2-secrets/secrets.yml
+      grep -q 'ocp4_pull_secret:' ~/agnosticd-v2-secrets/secrets.yml &&
+      ! grep -q 'Add Your Pull Secret' ~/agnosticd-v2-secrets/secrets.yml
     required: true
     fail_message: >-
       ocp4_pull_secret is missing or still has the placeholder value in secrets.yml.
@@ -162,8 +163,8 @@ validation:
 
   - name: "RHOAI registry credentials are set (not placeholder)"
     command: >-
-      grep -q 'ocp4_workload_rhoai_registry_username:' /home/vpcuser/agnosticd-v2-secrets/secrets.yml &&
-      ! grep -q 'registry-service-account' /home/vpcuser/agnosticd-v2-secrets/secrets.yml
+      grep -q 'ocp4_workload_rhoai_registry_username:' ~/agnosticd-v2-secrets/secrets.yml &&
+      ! grep -q 'registry-service-account' ~/agnosticd-v2-secrets/secrets.yml
     required: true
     fail_message: >-
       Registry credentials are missing or still have placeholder values in secrets.yml.
@@ -174,16 +175,20 @@ validation:
 post_setup:
   message: |
     Setup complete! Next steps:
-      1. Create secrets: cp agnosticd-v2-vars/secrets-template.yml \
-           /home/vpcuser/agnosticd-v2-secrets/secrets.yml
-         (edit to fill in pull_secret and cloud credentials)
+      1. Fill secrets: edit ~/agnosticd-v2-secrets/secrets.yml
+         - ocp4_pull_secret: from https://console.redhat.com/openshift/install/pull-secret
+         - ocp4_workload_rhoai_registry_username/password: from https://access.redhat.com/terms-based-registry/
 
-      2. Check quota:   ./scripts/check-quota.sh aws us-east-2
+      2. Fill account secrets: edit ~/agnosticd-v2-secrets/secrets-${account}.yml
+         - aws_access_key_id / aws_secret_access_key: from your demo.redhat.com sandbox
+         - base_domain: sandbox<NNN>.opentlc.com (from your Open Environment details)
 
-      3. Track progress: spec status
+      3. Check quota:   ./scripts/check-quota.sh
 
-      4. Deploy AWS:    agd provision \
-           --vars /home/vpcuser/agnosticd-v2-vars/rhoai-aws.yml \
-           --secrets /home/vpcuser/agnosticd-v2-secrets/
+      4. Track progress: spec status
 
-      5. Verify RHOAI:  oc get datasciencecluster -n redhat-ods-operator
+      5. Deploy:        cd ~/agnosticd-v2 && ./bin/agd provision \
+                          --guid rhoai01 --config openshift-cluster \
+                          --account ${account}
+
+      6. Verify RHOAI:  oc get datasciencecluster -n redhat-ods-operator
