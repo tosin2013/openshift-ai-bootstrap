@@ -12,22 +12,25 @@
       must be set. Supply them via agnosticd-v2-secrets/secrets.yml —
       never hard-code credentials in vars files.
 
-# ── 0b. Wait for GPU node to be Ready (if GPU is enabled) ───────────────────
-- name: Wait for at least one GPU-labeled node to be Ready
+# ── 0b. Wait for GPU MachineSet node to be Ready (if GPU is enabled) ────────
+# Note: nvidia.com/gpu=true label is applied AFTER RHOAI deploys NFD + GPU Operator.
+# We wait for the machineset's node to be Ready (by taint), not the GPU label.
+- name: Wait for GPU-tainted node to be Ready
   kubernetes.core.k8s_info:
     api_version: v1
     kind: Node
     label_selectors:
-      - "nvidia.com/gpu=true"
-  register: ocp4_workload_rhoai_gpu_nodes
-  until:
-    - ocp4_workload_rhoai_gpu_nodes.resources | length > 0
-    - ocp4_workload_rhoai_gpu_nodes.resources | selectattr('status.conditions', 'defined')
-      | map(attribute='status.conditions')
-      | map('selectattr', 'type', 'equalto', 'Ready')
-      | map('selectattr', 'status', 'equalto', 'True')
-      | map('list') | select('ne', []) | list | length > 0
-  retries: 60
+      - "node-role.kubernetes.io/worker="
+  register: ocp4_workload_rhoai_all_nodes
+  until: >-
+    ocp4_workload_rhoai_all_nodes.resources
+    | selectattr('spec.taints', 'defined')
+    | selectattr('spec.taints', 'ne', None)
+    | map(attribute='spec.taints')
+    | map('selectattr', 'key', 'equalto', 'nvidia.com/gpu')
+    | select('ne', [])
+    | list | length > 0
+  retries: 40
   delay: 30
   when: ocp4_workload_rhoai_gpu_enabled | bool
 
