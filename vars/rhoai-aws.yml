@@ -39,6 +39,9 @@ ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
 worker_instance_type: m6i.4xlarge
 worker_instance_count: 3
 
+# Disable Satellite registration — sandbox accounts use RHUI/pull-secret for repos
+install_satellite_repositories: false
+
 # Required for RHDP automated cleanup — missing tags orphan resources
 cloud_tags:
   owner: "{{ email | default('unknown') }}"
