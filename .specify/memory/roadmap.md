@@ -19,8 +19,8 @@ Notes: User clarified on 2026-11-25 that the project's primary purpose is
   RHOAI versions never silently fall behind new releases.
 
 --- Prior revision (1.0.3, 2026-11-25) ---
-Version change: 1.0.2 → 1.0.3
-Bump rationale: PATCH — status transition: 003 planned → in-progress.
+Version change: 1.0.3 → 1.1.1
+Bump rationale: MINOR — added spec 008 (RHOAI Post-Deploy Validation) + 003 in-progress.
 Changes: Status: 003 planned → in-progress.
 Notes: 003 moved to in-progress on 2026-11-25.
 
@@ -246,6 +246,24 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   issue.
 - **Spec dir:** specs/007-ci-version-drift
 
+### 008 — RHOAI Post-Deploy Validation  [status: in-progress]
+
+- **Description:** A cloud-agnostic Ansible role (`ocp4_workload_validate_rhoai`) that
+  runs as the final workload after every RHOAI deployment (AWS, GCP, Azure) and checks
+  all 8 components of the GPU + AI stack. Acts as the release gate: a deployment cannot
+  be tagged as a release until all checks pass.
+- **Outcome:** Every cloud deployment emits `VALIDATION: PASS` from `agnosticd_user_info`
+  confirming DataScienceCluster Ready, dashboard accessible, NFD operational, GPU node
+  labeled, ClusterPolicy Ready, nvidia.com/gpu allocatable, and all pods Running.
+- **Scope (in):** `ocp4_workload_validate_rhoai` role; added as last workload in
+  rhoai-aws.yml, rhoai-gcp.yml, rhoai-azure.yml; 8 checks with pass/fail report.
+- **Scope (out):** Installing or configuring any RHOAI component (read-only).
+- **Depends on:** 003
+- **Governed by:** C-06
+- **Spec dir:** specs/008-rhoai-validation
+- **Notes:** Establishes release gate rule: verified = `VALIDATION: PASS` on live cluster.
+  Tag cloud-specific releases (v0.1.0-aws, v0.2.0-gcp, v0.3.0-azure) after each passes.
+
 ## Open Questions
 
 - **Q1** — Does rhai-on-openshift-chart v3.4 require the RHOAI operator channel
@@ -270,4 +288,4 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ---
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-25
+**Version**: 1.1.1 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-26

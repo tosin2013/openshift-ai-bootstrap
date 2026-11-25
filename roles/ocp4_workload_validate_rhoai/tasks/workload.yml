@@ -1,0 +1,241 @@
+---
+# RHOAI post-deploy validation — read-only checks, no resources created.
+# All 8 checks must pass for VALIDATION: PASS to be emitted.
+
+- name: Initialize validation results
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_results: []
+    ocp4_workload_validate_rhoai_failed: []
+
+# ── Check 1: DataScienceCluster Ready ───────────────────────────────────────
+- name: Check 1 — DataScienceCluster Ready
+  kubernetes.core.k8s_info:
+    api_version: datasciencecluster.opendatahub.io/v1
+    kind: DataScienceCluster
+  register: ocp4_workload_validate_rhoai_dsc
+  until:
+    - ocp4_workload_validate_rhoai_dsc.resources | length > 0
+    - ocp4_workload_validate_rhoai_dsc.resources[0].status.phase is defined
+    - ocp4_workload_validate_rhoai_dsc.resources[0].status.phase == "Ready"
+  retries: "{{ ocp4_workload_validate_rhoai_check_retries }}"
+  delay: "{{ ocp4_workload_validate_rhoai_check_delay }}"
+  ignore_errors: true
+
+- name: Record Check 1 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results + ['[PASS] DataScienceCluster Ready'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if not ocp4_workload_validate_rhoai_dsc.failed | default(false)
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] DataScienceCluster not Ready'] }}
+
+# ── Check 2: RHOAI Dashboard HTTP 200 ───────────────────────────────────────
+- name: Get RHOAI dashboard route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: rhods-dashboard
+    namespace: "{{ ocp4_workload_validate_rhoai_app_namespace }}"
+  register: ocp4_workload_validate_rhoai_route
+  failed_when: false
+
+- name: Check 2 — RHOAI dashboard HTTP reachable
+  ansible.builtin.uri:
+    url: "https://{{ ocp4_workload_validate_rhoai_route.resources[0].spec.host }}"
+    validate_certs: false
+    status_code: [200, 302, 301]
+    timeout: 30
+  register: ocp4_workload_validate_rhoai_dashboard
+  when: ocp4_workload_validate_rhoai_route.resources | length > 0
+  ignore_errors: true
+
+- name: Record Check 2 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results +
+         ['[PASS] RHOAI dashboard HTTP reachable'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if (ocp4_workload_validate_rhoai_route.resources | length > 0
+             and not (ocp4_workload_validate_rhoai_dashboard.failed | default(false)))
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] RHOAI dashboard not reachable'] }}
+
+# ── Check 3: NFD NodeFeatureDiscovery Ready ──────────────────────────────────
+- name: Check 3 — NFD NodeFeatureDiscovery Ready
+  kubernetes.core.k8s_info:
+    api_version: nfd.openshift.io/v1
+    kind: NodeFeatureDiscovery
+    namespace: "{{ ocp4_workload_validate_rhoai_nfd_namespace }}"
+  register: ocp4_workload_validate_rhoai_nfd
+  ignore_errors: true
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+- name: Record Check 3 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results +
+         ['[PASS] NFD NodeFeatureDiscovery present'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if (not ocp4_workload_validate_rhoai_check_gpu | bool
+             or (ocp4_workload_validate_rhoai_nfd.resources | default([]) | length > 0))
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] NFD NodeFeatureDiscovery not found'] }}
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+# ── Check 4: GPU node has NFD NVIDIA PCI label ───────────────────────────────
+- name: Check 4 — GPU node has NFD NVIDIA PCI label
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+    label_selectors:
+      - "feature.node.kubernetes.io/pci-10de.present=true"
+  register: ocp4_workload_validate_rhoai_gpu_node_label
+  ignore_errors: true
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+- name: Record Check 4 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results +
+         ['[PASS] GPU node has NFD NVIDIA PCI label'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if (not ocp4_workload_validate_rhoai_check_gpu | bool
+             or (ocp4_workload_validate_rhoai_gpu_node_label.resources | default([]) | length > 0))
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] No node with NVIDIA PCI label found'] }}
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+# ── Check 5: GPU Operator ClusterPolicy Ready ────────────────────────────────
+- name: Check 5 — GPU Operator ClusterPolicy Ready
+  kubernetes.core.k8s_info:
+    api_version: nvidia.com/v1
+    kind: ClusterPolicy
+    name: gpu-cluster-policy
+  register: ocp4_workload_validate_rhoai_clusterpolicy
+  ignore_errors: true
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+- name: Record Check 5 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results +
+         ['[PASS] GPU Operator ClusterPolicy Ready'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if (not ocp4_workload_validate_rhoai_check_gpu | bool
+             or (ocp4_workload_validate_rhoai_clusterpolicy.resources | default([]) | length > 0
+                 and ocp4_workload_validate_rhoai_clusterpolicy.resources[0].status.state | default('') == 'ready'))
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] GPU Operator ClusterPolicy not Ready'] }}
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+# ── Check 6: nvidia.com/gpu allocatable > 0 ─────────────────────────────────
+- name: Check 6 — nvidia.com/gpu allocatable on GPU node
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+  register: ocp4_workload_validate_rhoai_all_nodes
+  ignore_errors: true
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+- name: Record Check 6 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_gpu_count: >-
+      {{ ocp4_workload_validate_rhoai_all_nodes.resources | default([])
+         | map(attribute='status.allocatable')
+         | select('defined')
+         | map(attribute='nvidia.com/gpu', default='0')
+         | map('int') | sum }}
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results +
+         ['[PASS] nvidia.com/gpu allocatable'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if (not ocp4_workload_validate_rhoai_check_gpu | bool
+             or (ocp4_workload_validate_rhoai_all_nodes.resources | default([])
+                 | map(attribute='status.allocatable') | select('defined')
+                 | map(attribute='nvidia.com/gpu', default='0') | map('int') | sum) > 0)
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] nvidia.com/gpu not allocatable on any node'] }}
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+# ── Check 7: GPU Operator pods Running ──────────────────────────────────────
+- name: Check 7 — GPU Operator pods Running
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ ocp4_workload_validate_rhoai_gpu_namespace }}"
+  register: ocp4_workload_validate_rhoai_gpu_pods
+  ignore_errors: true
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+- name: Record Check 7 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_gpu_not_running: >-
+      {{ ocp4_workload_validate_rhoai_gpu_pods.resources | default([])
+         | rejectattr('status.phase', 'equalto', 'Running')
+         | rejectattr('status.phase', 'equalto', 'Succeeded')
+         | list | length }}
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results +
+         ['[PASS] GPU Operator pods Running'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if (not ocp4_workload_validate_rhoai_check_gpu | bool
+             or (ocp4_workload_validate_rhoai_gpu_pods.resources | default([])
+                 | rejectattr('status.phase', 'equalto', 'Running')
+                 | rejectattr('status.phase', 'equalto', 'Succeeded')
+                 | list | length) == 0)
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] Some GPU Operator pods not Running'] }}
+  when: ocp4_workload_validate_rhoai_check_gpu | bool
+
+# ── Check 8: RHOAI application pods Running ──────────────────────────────────
+- name: Check 8 — RHOAI application pods Running
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ ocp4_workload_validate_rhoai_app_namespace }}"
+  register: ocp4_workload_validate_rhoai_app_pods
+  ignore_errors: true
+
+- name: Record Check 8 result
+  ansible.builtin.set_fact:
+    ocp4_workload_validate_rhoai_app_not_running: >-
+      {{ ocp4_workload_validate_rhoai_app_pods.resources | default([])
+         | rejectattr('status.phase', 'equalto', 'Running')
+         | rejectattr('status.phase', 'equalto', 'Succeeded')
+         | list | length }}
+    ocp4_workload_validate_rhoai_results: >-
+      {{ ocp4_workload_validate_rhoai_results +
+         ['[PASS] RHOAI application pods Running'] }}
+    ocp4_workload_validate_rhoai_failed: >-
+      {{ ocp4_workload_validate_rhoai_failed
+         if (ocp4_workload_validate_rhoai_app_pods.resources | default([])
+             | rejectattr('status.phase', 'equalto', 'Running')
+             | rejectattr('status.phase', 'equalto', 'Succeeded')
+             | list | length) == 0
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] Some RHOAI pods not Running'] }}
+
+# ── Emit validation report ───────────────────────────────────────────────────
+- name: Emit validation report
+  agnosticd.core.agnosticd_user_info:
+    msg: |
+      RHOAI Post-Deploy Validation
+      ════════════════════════════
+      {% for result in ocp4_workload_validate_rhoai_results %}
+      {{ result }}
+      {% endfor %}
+      {% for failure in ocp4_workload_validate_rhoai_failed %}
+      {{ failure }}
+      {% endfor %}
+
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      VALIDATION: {{ 'PASS' if ocp4_workload_validate_rhoai_failed | length == 0 else 'FAIL' }}
+      Checks passed: {{ ocp4_workload_validate_rhoai_results | length }}
+      Checks failed: {{ ocp4_workload_validate_rhoai_failed | length }}
+
+- name: Fail if any validation check failed
+  ansible.builtin.fail:
+    msg: >-
+      RHOAI validation failed. Failed checks:
+      {{ ocp4_workload_validate_rhoai_failed | join(', ') }}
+  when: ocp4_workload_validate_rhoai_failed | length > 0

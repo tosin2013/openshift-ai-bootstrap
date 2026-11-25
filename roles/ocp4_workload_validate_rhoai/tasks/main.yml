@@ -1,0 +1,23 @@
+---
+- name: Run RHOAI validation checks
+  when: ACTION in ["provision", "create"]
+  ansible.builtin.include_tasks: workload.yml
+
+- name: Run RHOAI validation status
+  when: ACTION == "status"
+  ansible.builtin.include_tasks: workload.yml
+
+- name: Destroy — no-op (validation role creates no resources)
+  when: ACTION in ["destroy", "remove"]
+  ansible.builtin.debug:
+    msg: "ocp4_workload_validate_rhoai: no resources to remove"
+
+- name: Stop — no-op
+  when: ACTION == "stop"
+  ansible.builtin.debug:
+    msg: "ocp4_workload_validate_rhoai: no stop action"
+
+- name: Start — no-op
+  when: ACTION == "start"
+  ansible.builtin.debug:
+    msg: "ocp4_workload_validate_rhoai: no start action"

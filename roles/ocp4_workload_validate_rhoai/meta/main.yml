@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_validate_rhoai
+  author: tosin2013
+  description: >-
+    Post-deploy validation for RHOAI on OCP. Checks DataScienceCluster, dashboard,
+    NFD, GPU Operator, and nvidia.com/gpu allocatable. Cloud-agnostic: works on
+    AWS, GCP, and Azure. Run as the last workload to gate verified status.
+  license: Apache-2.0
+  min_ansible_version: "2.14"
+
+dependencies: []

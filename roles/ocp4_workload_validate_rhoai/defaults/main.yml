@@ -1,0 +1,15 @@
+---
+# ocp4_workload_validate_rhoai default variables
+
+ocp4_workload_validate_rhoai_dsc_namespace: redhat-ods-operator
+ocp4_workload_validate_rhoai_app_namespace: redhat-ods-applications
+ocp4_workload_validate_rhoai_nfd_namespace: openshift-nfd
+ocp4_workload_validate_rhoai_gpu_namespace: nvidia-gpu-operator
+ocp4_workload_validate_rhoai_argocd_namespace: openshift-gitops
+
+ocp4_workload_validate_rhoai_check_timeout: 300
+ocp4_workload_validate_rhoai_check_retries: 20
+ocp4_workload_validate_rhoai_check_delay: 15
+
+# Set to false to skip GPU checks (non-GPU deployments)
+ocp4_workload_validate_rhoai_check_gpu: true

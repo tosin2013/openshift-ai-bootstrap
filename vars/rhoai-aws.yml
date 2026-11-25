@@ -20,6 +20,7 @@ workloads:
   - ocp4_workload_machinesets
   - ocp4_workload_openshift_gitops
   - ocp4_workload_rhoai
+  - ocp4_workload_validate_rhoai
 
 # cert-manager channel — available on OCP 4.22: stable-v1, stable-v1.19, stable-v1.20
 ocp4_workload_cert_manager_channel: stable-v1
