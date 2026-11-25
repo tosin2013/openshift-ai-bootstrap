@@ -150,8 +150,10 @@
               operator:
                 type: {{ ocp4_workload_rhoai_operator_type }}
               dependencies:
-                nfd: {{ ocp4_workload_rhoai_nfd_enabled | lower }}
-                nvidiaGPUOperator: {{ ocp4_workload_rhoai_gpu_enabled | lower }}
+                nfd:
+                  enabled: {{ ocp4_workload_rhoai_nfd_enabled | lower }}
+                nvidiaGPUOperator:
+                  enabled: {{ ocp4_workload_rhoai_gpu_enabled | lower }}
         destination:
           server: https://kubernetes.default.svc
           namespace: "{{ ocp4_workload_rhoai_operator_namespace }}"
