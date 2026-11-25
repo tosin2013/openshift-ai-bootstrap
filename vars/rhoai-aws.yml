@@ -22,8 +22,12 @@ workloads:
   - ocp4_workload_rhoai
 
 # cert-manager channel — available on OCP 4.22: stable-v1, stable-v1.19, stable-v1.20
-# stable-v1.15 does not exist and caused InstallPlan to never appear
 ocp4_workload_cert_manager_channel: stable-v1
+
+# Disable ingress/API cert issuance — requires Route53 credentials we don't have.
+# cert-manager is installed for RHOAI's internal use only.
+ocp4_workload_cert_manager_install_ingress_certificates: false
+ocp4_workload_cert_manager_install_api_certificates: false
 
 # GPU node pool — g4dn.xlarge (1× NVIDIA T4)
 ocp4_workload_machinesets_machineset_groups:
