@@ -84,12 +84,14 @@
   when: ocp4_workload_validate_rhoai_check_gpu | bool
 
 # ── Check 4: GPU node has NFD NVIDIA PCI label ───────────────────────────────
-- name: Check 4 — GPU node has NFD vendor PCI label ({{ ocp4_workload_validate_rhoai_gpu_vendor_pci_id }})
+# NFD PCI label format is pci-{class}_{vendor} (e.g. pci-0302_10de for NVIDIA compute)
+# More reliable: use nvidia.com/cuda.driver-version.major set by GPU feature discovery pod
+- name: Check 4 — GPU node has NVIDIA CUDA driver label (from GPU feature discovery)
   kubernetes.core.k8s_info:
     api_version: v1
     kind: Node
     label_selectors:
-      - "feature.node.kubernetes.io/pci-{{ ocp4_workload_validate_rhoai_gpu_vendor_pci_id }}.present=true"
+      - "nvidia.com/cuda.driver-version.major"
   register: ocp4_workload_validate_rhoai_gpu_node_label
   ignore_errors: true
   when: ocp4_workload_validate_rhoai_check_gpu | bool
@@ -98,12 +100,12 @@
   ansible.builtin.set_fact:
     ocp4_workload_validate_rhoai_results: >-
       {{ ocp4_workload_validate_rhoai_results +
-         ['[PASS] GPU node has NFD NVIDIA PCI label'] }}
+         ['[PASS] GPU node has NVIDIA CUDA driver label'] }}
     ocp4_workload_validate_rhoai_failed: >-
       {{ ocp4_workload_validate_rhoai_failed
          if (not ocp4_workload_validate_rhoai_check_gpu | bool
              or (ocp4_workload_validate_rhoai_gpu_node_label.resources | default([]) | length > 0))
-         else ocp4_workload_validate_rhoai_failed + ['[FAIL] No node with NVIDIA PCI label found'] }}
+         else ocp4_workload_validate_rhoai_failed + ['[FAIL] No node with nvidia.com/cuda.driver-version.major label — GPU feature discovery not complete'] }}
   when: ocp4_workload_validate_rhoai_check_gpu | bool
 
 # ── Check 5: GPU Operator ClusterPolicy Ready ────────────────────────────────
