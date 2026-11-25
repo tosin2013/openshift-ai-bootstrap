@@ -322,6 +322,13 @@ print(m.group(1) if m else '0.0')
                 continue
             fi
         else
+            # Not installed — check if optional before attempting install
+            if [[ "$prereq_required" == "false" ]]; then
+                local note
+                note="$(manifest_get "${prereqs_path}[$i].note")"
+                warn_msg "${name} not installed (optional — ${note:-install manually if needed})"
+                continue
+            fi
             installing "${name} not found"
         fi
 
