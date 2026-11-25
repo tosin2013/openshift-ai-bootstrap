@@ -42,10 +42,11 @@ worker_instance_count: 3
 # Disable Satellite registration — sandbox accounts don't have Satellite credentials
 install_satellite_repositories: false
 
-# GOLD AMI requires RHSM which sandbox accounts don't have.
-# Skip common packages on bastion — OCP installer doesn't require them.
-# Future: switch bastion_instance_image to a RHUI marketplace image for new deployments.
-install_common_packages: false
+# Override bastion AMI to RHEL 10 marketplace/RHUI image (Hourly2 = RHUI pre-configured).
+# GOLD AMI (Access2) requires RHSM registration which sandbox accounts don't have.
+# ami-05e4fe0cb43c83113 = RHEL-10.2.0_HVM-20261020-x86_64-0-Hourly2-GP3, us-east-2
+agnosticd_images:
+  bastion: ami-05e4fe0cb43c83113
 
 # Required for RHDP automated cleanup — missing tags orphan resources
 cloud_tags:
