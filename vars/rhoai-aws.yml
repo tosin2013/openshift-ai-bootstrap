@@ -29,7 +29,9 @@ ocp4_workload_cert_manager_channel: stable-v1
 ocp4_workload_machinesets_machineset_groups:
   - name: gpu
     instance_type: g4dn.xlarge
-    replicas: 1
+    total_replicas: 1
+    total_replicas_min: 1
+    total_replicas_max: 1
     labels:
       nvidia.com/gpu: "true"
     taints:
