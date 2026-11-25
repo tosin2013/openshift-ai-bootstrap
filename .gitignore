@@ -14,5 +14,5 @@ deployment_info.txt
 logs/
 .workshop-lock
 .workshop-state
-.claude/
+.claude/settings.local.json
 .specify/extensions/.cache/
