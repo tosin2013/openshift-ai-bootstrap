@@ -303,9 +303,21 @@
   when: ocp4_workload_rhoai_gpu_enabled | bool
 
 # ── 6. Wait for DataScienceCluster to reach Ready ───────────────────────────
-- name: Wait for RHOAI operator to install (CRDs to register)
-  ansible.builtin.pause:
-    minutes: 2
+# Wait for the RHOAI operator CSV to be Succeeded before polling DSC.
+# Argo CD uses two-phase sync: phase 1 creates OLM subscription, phase 2 (selfHeal)
+# creates DataScienceCluster + DSCInitialization once CRDs register. This wait
+# ensures the operator is ready before we poll for the DSC.
+- name: Wait for RHOAI operator CSV to be Succeeded
+  kubernetes.core.k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: ClusterServiceVersion
+    namespace: "{{ ocp4_workload_rhoai_operator_namespace }}"
+  register: ocp4_workload_rhoai_csv
+  until:
+    - ocp4_workload_rhoai_csv.resources | length > 0
+    - ocp4_workload_rhoai_csv.resources | selectattr('status.phase', 'equalto', 'Succeeded') | list | length > 0
+  retries: 40
+  delay: 30
   when: not ansible_check_mode
 
 - name: Wait for DataScienceCluster to reach Ready
@@ -320,7 +332,7 @@
       ocp4_workload_rhoai_dsc.resources[0].status.conditions |
       selectattr('type', 'equalto', 'Ready') |
       selectattr('status', 'equalto', 'True') | list | length > 0
-  retries: 40
+  retries: 60
   delay: 30
 
 # ── 7. Get RHOAI dashboard URL ───────────────────────────────────────────────
