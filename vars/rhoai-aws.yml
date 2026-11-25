@@ -32,6 +32,7 @@ ocp4_workload_machinesets_machineset_groups:
       nvidia.com/gpu: "true"
     taints:
       - key: nvidia.com/gpu
+        value: "true"
         effect: NoSchedule
 
 # RHOAI workload settings
