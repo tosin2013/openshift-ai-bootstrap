@@ -124,6 +124,103 @@
         username: "{{ ocp4_workload_rhoai_registry_username | default(registry_username | default('')) }}"
         password: "{{ ocp4_workload_rhoai_registry_password | default(registry_password | default('')) }}"
 
+# ── 3b. Create GPU MachineSet for GCP (cloud_provider == gcp only) ──────────
+# ocp4_workload_machinesets has no GCP implementation (machineset-gcp.yml missing).
+# Extract cluster facts from an existing worker MachineSet and create the GPU set directly.
+- name: Get existing worker MachineSet facts (GCP)
+  kubernetes.core.k8s_info:
+    api_version: machine.openshift.io/v1beta1
+    kind: MachineSet
+    namespace: openshift-machine-api
+  register: ocp4_workload_rhoai_gcp_machinesets
+  when:
+    - cloud_provider | default('aws') == 'gcp'
+    - ocp4_workload_rhoai_gpu_enabled | bool
+
+- name: Extract GCP cluster facts from worker MachineSet
+  ansible.builtin.set_fact:
+    ocp4_workload_rhoai_gcp_project: >-
+      {{ ocp4_workload_rhoai_gcp_machinesets.resources
+         | selectattr('spec.template.spec.providerSpec.value.projectID', 'defined')
+         | map(attribute='spec.template.spec.providerSpec.value.projectID') | first }}
+    ocp4_workload_rhoai_gcp_network: >-
+      {{ ocp4_workload_rhoai_gcp_machinesets.resources
+         | selectattr('spec.template.spec.providerSpec.value.networkInterfaces', 'defined')
+         | map(attribute='spec.template.spec.providerSpec.value.networkInterfaces')
+         | map('first') | map(attribute='network') | first }}
+    ocp4_workload_rhoai_gcp_subnetwork: >-
+      {{ ocp4_workload_rhoai_gcp_machinesets.resources
+         | selectattr('spec.template.spec.providerSpec.value.networkInterfaces', 'defined')
+         | map(attribute='spec.template.spec.providerSpec.value.networkInterfaces')
+         | map('first') | map(attribute='subnetwork') | first }}
+    ocp4_workload_rhoai_gcp_cluster_id: >-
+      {{ ocp4_workload_rhoai_gcp_machinesets.resources[0].metadata.name
+         | regex_replace('-worker-.*$', '') }}
+    ocp4_workload_rhoai_gcp_coreos_image: >-
+      {{ ocp4_workload_rhoai_gcp_machinesets.resources
+         | selectattr('spec.template.spec.providerSpec.value.disks', 'defined')
+         | map(attribute='spec.template.spec.providerSpec.value.disks')
+         | map('first') | map(attribute='image') | first }}
+  when:
+    - cloud_provider | default('aws') == 'gcp'
+    - ocp4_workload_rhoai_gpu_enabled | bool
+    - ocp4_workload_rhoai_gcp_machinesets.resources | length > 0
+
+- name: Create GCP GPU MachineSet (g2-standard-4, NVIDIA L4)
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: machine.openshift.io/v1beta1
+      kind: MachineSet
+      metadata:
+        name: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
+        namespace: openshift-machine-api
+        labels:
+          machine.openshift.io/cluster-api-cluster: "{{ ocp4_workload_rhoai_gcp_cluster_id }}"
+      spec:
+        replicas: "{{ ocp4_workload_rhoai_gcp_gpu_replicas }}"
+        selector:
+          matchLabels:
+            machine.openshift.io/cluster-api-cluster: "{{ ocp4_workload_rhoai_gcp_cluster_id }}"
+            machine.openshift.io/cluster-api-machineset: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
+        template:
+          metadata:
+            labels:
+              machine.openshift.io/cluster-api-cluster: "{{ ocp4_workload_rhoai_gcp_cluster_id }}"
+              machine.openshift.io/cluster-api-machine-role: worker
+              machine.openshift.io/cluster-api-machine-type: worker
+              machine.openshift.io/cluster-api-machineset: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
+          spec:
+            taints:
+              - key: nvidia.com/gpu
+                value: "true"
+                effect: NoSchedule
+            providerSpec:
+              value:
+                apiVersion: machine.openshift.io/v1beta1
+                kind: GCPMachineProviderConfig
+                machineType: "{{ ocp4_workload_rhoai_gcp_gpu_machine_type }}"
+                onHostMaintenance: Terminate
+                restartPolicy: Always
+                region: "{{ gcp_region | default('us-east1') }}"
+                zone: "{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
+                projectID: "{{ ocp4_workload_rhoai_gcp_project }}"
+                networkInterfaces:
+                  - network: "{{ ocp4_workload_rhoai_gcp_network }}"
+                    subnetwork: "{{ ocp4_workload_rhoai_gcp_subnetwork }}"
+                disks:
+                  - autoDelete: true
+                    boot: true
+                    image: "{{ ocp4_workload_rhoai_gcp_coreos_image }}"
+                    sizeGb: "{{ ocp4_workload_rhoai_gcp_disk_size_gb }}"
+                    type: pd-ssd
+                credentialsSecret:
+                  name: gcp-cloud-credentials
+  when:
+    - cloud_provider | default('aws') == 'gcp'
+    - ocp4_workload_rhoai_gpu_enabled | bool
+    - ocp4_workload_rhoai_gcp_cluster_id is defined
+
 # ── 4b. Grant Argo CD cluster-admin for RHOAI cluster-scoped CRDs ───────────
 # DataScienceCluster and DSCInitialization are cluster-scoped resources.
 # The ArgoCD application-controller needs cluster-admin to create them.

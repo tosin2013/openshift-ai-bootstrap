@@ -1,12 +1,23 @@
 # Tasks: GCP Deployment (OCP 4.22 + RHOAI + GPU)
 
 - [x] Create agnosticd-v2-vars/rhoai-gcp.yml
-- [x] Configure GPU MachineSet vars (n1-standard-4 with accelerator)
+- [x] Switch GPU instance from n1-standard-4+T4 to g2-standard-4 (L4, 24GB) — T4 deprecated Aug 2027
+- [x] Add cloud_provider_repo: https://github.com/tosin2013/cloud_provider_gcp.git to vars
+- [x] Remove ocp4_workload_machinesets from GCP workloads (no machineset-gcp.yml implementation)
+- [x] Add custom GCP MachineSet task to ocp4_workload_rhoai role (kubernetes.core.k8s, cloud_provider==gcp guard)
+- [ ] Get GCP Open Environment from demo.redhat.com (project ID, service account JSON)
 - [ ] Configure GCP CLI credentials: gcloud auth login && gcloud config set project <PROJECT_ID>
-- [ ] Run agd setup (creates ~/agnosticd-v2-virtualenv/ — if not already done from spec 003)
-- [ ] Create ~/agnosticd-v2-secrets/secrets-gcp.yml (from vars/secrets-template.yml; fill pull_secret, rhsm creds, ocp4_workload_rhoai_registry_username/password, GCP service account)
+- [ ] Run agd setup (if not already done)
+- [ ] Create ~/agnosticd-v2-secrets/secrets-gcp.yml:
+      - gcp_project_id: <from Open Environment>
+      - gcp_credentials_file: ~/agnosticd-v2-secrets/gcp-service-account.json
+      - Also: ocp4_pull_secret, ocp4_workload_rhoai_registry_username/password
+- [ ] Place GCP service account JSON at ~/agnosticd-v2-secrets/gcp-service-account.json
 - [ ] Run check-quota.sh for GCP
-- [ ] Run: cd ~/agnosticd-v2 && ./bin/agd provision --guid <GUID> --config openshift-cluster --account <ACCOUNT>
+- [ ] Run: cd ~/agnosticd-v2 && ./bin/agd provision --guid rhoai01gcp --config openshift-cluster --account <ACCOUNT>
 - [ ] Verify DataScienceCluster reaches Ready: oc get datasciencecluster -n redhat-ods-operator
 - [ ] Verify RHOAI dashboard accessible: oc get route rhods-dashboard -n redhat-ods-applications
 - [ ] Verify GPU node has nvidia.com/gpu allocatable: oc get nodes -l nvidia.com/gpu=true
+- [ ] Verify agnosticd_user_info emitted: check agnosticd-v2-output/rhoai01gcp/ for user_info output
+- [ ] Teardown test: cd ~/agnosticd-v2 && ./bin/agd destroy --guid rhoai01gcp --config openshift-cluster --account <ACCOUNT>
+- [ ] Tag v0.2.0-gcp release after all 8 validation checks pass

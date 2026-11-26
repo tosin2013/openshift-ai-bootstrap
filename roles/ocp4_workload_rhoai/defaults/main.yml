@@ -25,6 +25,14 @@ ocp4_workload_rhoai_gitops_values_path: "charts/rhai-on-openshift-chart/values.y
 ocp4_workload_rhoai_operator_namespace: "redhat-ods-operator"
 ocp4_workload_rhoai_argocd_namespace: "openshift-gitops"
 
+# GCP GPU MachineSet — used when cloud_provider == gcp.
+# ocp4_workload_machinesets has no GCP implementation; role creates the MachineSet directly.
+# g2-standard-4 = NVIDIA L4 (24GB VRAM). Purpose-built GPU type, no gpus: stanza needed.
+ocp4_workload_rhoai_gcp_gpu_machine_type: "g2-standard-4"
+ocp4_workload_rhoai_gcp_gpu_replicas: 1
+ocp4_workload_rhoai_gcp_gpu_zone: "us-east1-b"
+ocp4_workload_rhoai_gcp_disk_size_gb: 128
+
 # Red Hat registry credentials for pulling the OCI Helm chart.
 # Supply via secrets.yml — never hard-code credentials.
 ocp4_workload_rhoai_registry_username: ""

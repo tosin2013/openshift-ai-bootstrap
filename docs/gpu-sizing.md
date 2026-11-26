@@ -57,26 +57,52 @@ ocp4_workload_machinesets_machineset_groups:
 
 ## GCP GPU Instances (us-east1)
 
-| Instance | GPU | VRAM | vCPU | RAM | $/hr (on-demand) | Best for |
-|---|---|---|---|---|---|---|
-| `n1-standard-4` + T4 | 1× NVIDIA T4 | 16 GB | 4 | 15 GB | ~$0.57 | 7B models |
-| `n1-standard-8` + T4 | 1× NVIDIA T4 | 16 GB | 8 | 30 GB | ~$0.73 | 7B models + more RAM |
-| `n1-standard-4` + A100 (40G) | 1× NVIDIA A100 | 40 GB | 4 | 15 GB | ~$2.93 | 13B–20B models |
-| `a2-highgpu-1g` | 1× NVIDIA A100 (40GB) | 40 GB | 12 | 85 GB | ~$3.67 | 20B+ models |
-| `a2-highgpu-2g` | 2× NVIDIA A100 (40GB) | 80 GB | 24 | 170 GB | ~$7.35 | 70B quantized |
-| `a2-highgpu-8g` | 8× NVIDIA A100 (40GB) | 320 GB | 96 | 680 GB | ~$29.39 | 70B full precision |
-| `g2-standard-4` | 1× NVIDIA L4 | 24 GB | 4 | 16 GB | ~$0.70 | 13B models, efficient |
-| `g2-standard-8` | 1× NVIDIA L4 | 24 GB | 8 | 32 GB | ~$0.84 | 13B + more RAM |
+> ⚠️ **T4 deprecation:** `n1-standard-N + T4` instances are deprecated on GCP
+> with end-of-support **August 1, 2027**. Use `g2-standard-4` (L4) instead.
+> Also: `ocp4_workload_machinesets` has no GCP implementation — GPU MachineSets
+> are created directly by `ocp4_workload_rhoai` using `kubernetes.core.k8s`.
 
-**Recommended for GCP:** `g2-standard-4` (L4, 24GB) — newer architecture than T4,
-comparable cost, better throughput for transformer inference.
+### G2 Family — NVIDIA L4, 24 GB VRAM each (Ada Lovelace) ✅ Recommended
+
+| Instance | GPU | VRAM | vCPU | RAM | $/hr | Best for |
+|---|---|---|---|---|---|---|
+| `g2-standard-4` | 1× L4 | 24 GB | 4 | 16 GB | ~$0.70 | 13B models, dev/test |
+| `g2-standard-8` | 1× L4 | 24 GB | 8 | 32 GB | ~$0.85 | 13B + more CPU RAM |
+| `g2-standard-24` | 2× L4 | 48 GB | 24 | 96 GB | ~$1.69 | 34B quantized |
+| `g2-standard-48` | 4× L4 | 96 GB | 48 | 192 GB | ~$3.38 | 70B quantized |
+| `g2-standard-96` | 8× L4 | 192 GB | 96 | 384 GB | ~$6.76 | 70B+ full precision |
+
+### A2 Standard Family — NVIDIA A100 40 GB (Ampere)
+
+| Instance | GPU | VRAM | vCPU | RAM | $/hr | Best for |
+|---|---|---|---|---|---|---|
+| `a2-highgpu-1g` | 1× A100 40GB | 40 GB | 12 | 85 GB | ~$3.67 | 20B+ models |
+| `a2-highgpu-2g` | 2× A100 40GB | 80 GB | 24 | 170 GB | ~$7.35 | 70B quantized |
+| `a2-highgpu-4g` | 4× A100 40GB | 160 GB | 48 | 340 GB | ~$14.69 | 70B full precision |
+| `a2-highgpu-8g` | 8× A100 40GB | 320 GB | 96 | 680 GB | ~$29.39 | 180B quantized |
+
+### A2 Ultra Family — NVIDIA A100 80 GB (Ampere)
+
+| Instance | GPU | VRAM | vCPU | RAM | $/hr | Best for |
+|---|---|---|---|---|---|---|
+| `a2-ultragpu-1g` | 1× A100 80GB | 80 GB | 12 | 170 GB | ~$5.03 | 40B+ models |
+| `a2-ultragpu-2g` | 2× A100 80GB | 160 GB | 24 | 340 GB | ~$10.06 | 70B full precision |
+
+### A3 Family — NVIDIA H100 80 GB (Hopper) — us-central1 only
+
+| Instance | GPU | VRAM | vCPU | RAM | $/hr | Best for |
+|---|---|---|---|---|---|---|
+| `a3-highgpu-8g` | 8× H100 SXM | 640 GB | 208 | 1872 GB | ~$87.84 | 180B+ full precision |
+
+**Recommended start:** `g2-standard-4` (L4, 24GB, ~$0.70/hr) — 30% cheaper than
+AWS `g5.xlarge` (A10G, 24GB, ~$1.01/hr) for identical VRAM. Best price/performance
+for 13B model serving. Available in us-east1.
 
 **To use in this project:** set in `vars/rhoai-gcp.yml`:
 ```yaml
-ocp4_workload_machinesets_machineset_groups:
-  - name: gpu
-    instance_type: g2-standard-4   # L4, 24GB VRAM
-    total_replicas: 1
+ocp4_workload_rhoai_gcp_gpu_machine_type: g2-standard-4   # default
+ocp4_workload_rhoai_gcp_gpu_replicas: 1
+ocp4_workload_rhoai_gcp_gpu_zone: us-east1-b
 ```
 
 ---
