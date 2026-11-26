@@ -26,6 +26,10 @@ workloads:
 ocp4_workload_rhoai_gcp_gpu_machine_type: "g2-standard-4"
 ocp4_workload_rhoai_gcp_gpu_replicas: 1
 ocp4_workload_rhoai_gcp_gpu_zone: "us-east1-b"
+
+# GCP Open Environment credentials
+gcp_project_id: rhpds-345620
+gcp_credentials_file: /agnosticd-v2-secrets/gcp-service-account.json
 ocp4_workload_rhoai_gcp_disk_size_gb: 128
 
 ocp4_workload_rhoai_chart_version: "v3.4"

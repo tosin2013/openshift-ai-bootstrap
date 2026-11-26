@@ -173,21 +173,39 @@ validation:
 
   - name: "AWS credentials set in per-account secrets (not placeholder)"
     command: >-
-      grep -q 'aws_access_key_id:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
-      ! grep -qE '(Your AWS Access Key|<fill|<Your)' ~/agnosticd-v2-secrets/secrets-${account}.yml
+      test "${cloud_provider}" != "aws" ||
+      (grep -q 'aws_access_key_id:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
+      ! grep -qE '(Your AWS Access Key|<fill|<Your)' ~/agnosticd-v2-secrets/secrets-${account}.yml)
     required: true
     fail_message: >-
       AWS credentials are missing or still have placeholder values in secrets-${account}.yml.
       Copy from your configured AWS CLI: aws configure get aws_access_key_id
       Set aws_access_key_id and aws_secret_access_key in ~/agnosticd-v2-secrets/secrets-${account}.yml
 
-  - name: "base_domain set in per-account secrets"
-    command: "grep -v 'sandboxXXX' ~/agnosticd-v2-secrets/secrets-${account}.yml | grep -q 'base_domain:'"
+  - name: "base_domain set in per-account secrets (AWS only)"
+    command: >-
+      test "${cloud_provider}" != "aws" ||
+      grep -v 'sandboxXXX' ~/agnosticd-v2-secrets/secrets-${account}.yml | grep -q 'base_domain:'
     required: true
     fail_message: >-
-      base_domain is not set or still has placeholder value in secrets-${account}.yml.
+      base_domain is not set in secrets-${account}.yml (AWS only).
       Set it to your sandbox base domain, e.g.: base_domain: sandbox1044.opentlc.com
-      (Get the domain from your demo.redhat.com Open Environment details page)
+
+  - name: "GCP service account JSON exists (GCP only)"
+    command: >-
+      test "${cloud_provider}" != "gcp" ||
+      (test -f ~/agnosticd-v2-secrets/gcp-service-account.json &&
+       grep -q 'gcp_project_id:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
+       grep -q 'gcp_credentials_file:' ~/agnosticd-v2-secrets/secrets-${account}.yml)
+    required: true
+    fail_message: >-
+      GCP credentials not configured. Required for GCP deployments:
+      1. Place service account JSON at: ~/agnosticd-v2-secrets/gcp-service-account.json
+      2. Set in secrets-${account}.yml:
+           gcp_project_id: <your-gcp-project-id>
+           gcp_credentials_file: ~/agnosticd-v2-secrets/gcp-service-account.json
+      Get the service account JSON from: https://access.redhat.com/terms-based-registry/
+      or from your demo.redhat.com GCP Open Environment.
 
   - name: "ocp4_pull_secret is set (not placeholder)"
     command: >-
