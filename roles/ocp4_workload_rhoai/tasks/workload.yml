@@ -133,7 +133,9 @@
          | map(attribute='spec.template.spec.providerSpec.value.networkInterfaces')
          | map('first') | map(attribute='subnetwork') | first }}
     ocp4_workload_rhoai_gcp_cluster_id: >-
-      {{ ocp4_workload_rhoai_gcp_machinesets.resources[0].metadata.name
+      {{ ocp4_workload_rhoai_gcp_machinesets.resources
+         | selectattr('metadata.name', 'search', '-worker-')
+         | map(attribute='metadata.name') | first
          | regex_replace('-worker-.*$', '') }}
     ocp4_workload_rhoai_gcp_coreos_image: >-
       {{ ocp4_workload_rhoai_gcp_machinesets.resources
