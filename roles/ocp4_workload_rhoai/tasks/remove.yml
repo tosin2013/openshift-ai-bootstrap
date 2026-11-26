@@ -1,10 +1,10 @@
 ---
 # Removal tasks for ocp4_workload_rhoai
 
-# ── Pre-removal: clean Route53 cluster DNS records ───────────────────────────
+# ── Pre-removal: clean Route53 cluster DNS records (AWS only) ────────────────
 # CloudFormation cannot delete the cluster's Route53 hosted zone while the
-# OCP installer's A records (api.* and *.apps.*) remain. Remove them here
-# while the cluster API is still accessible, before agd destroy runs.
+# OCP installer's A records (api.* and *.apps.*) remain. AWS only — GCP and
+# Azure use their own DNS providers handled by the cloud provider destroy role.
 - name: Get cluster ingress domain
   kubernetes.core.k8s_info:
     api_version: config.openshift.io/v1
@@ -33,7 +33,9 @@
   register: ocp4_workload_rhoai_zone_id_raw
   failed_when: false
   changed_when: false
-  when: ocp4_workload_rhoai_base_domain is defined
+  when:
+    - ocp4_workload_rhoai_base_domain is defined
+    - cloud_provider | default('aws') == 'aws'
 
 - name: Set Route53 zone ID fact
   ansible.builtin.set_fact:
@@ -60,7 +62,7 @@
   changed_when: false
   when: ocp4_workload_rhoai_zone_id is defined
 
-- name: Delete cluster A records from Route53 zone
+- name: Delete cluster A records from Route53 zone  # AWS only
   ansible.builtin.command:
     argv:
       - aws
