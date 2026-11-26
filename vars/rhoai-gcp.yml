@@ -61,3 +61,10 @@ instances:
     ansible_group: bastions
     tags:
       - bastion
+
+# Disable Satellite — sandbox accounts don't have Satellite credentials (same as AWS)
+install_satellite_repositories: false
+
+# Skip common packages on bastion — RHEL 9 uses RHUI which should work
+# but disable as safety measure like AWS
+install_common_packages: false
