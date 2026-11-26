@@ -75,3 +75,7 @@ install_common_packages: false
 ocp4_workload_cert_manager_channel: stable-v1
 ocp4_workload_cert_manager_install_ingress_certificates: false
 ocp4_workload_cert_manager_install_api_certificates: false
+# cert-manager GCP DNS01 solver credentials — the role reads gcp_credentials (JSON dict)
+# even when no certificates are requested, to configure the solver.
+# The EE mounts ~/agnosticd-v2-secrets/ as /secrets/ so this lookup resolves inside the EE.
+gcp_credentials: "{{ lookup('file', '/secrets/gcp-service-account.json') | from_json }}"
