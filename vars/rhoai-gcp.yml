@@ -46,3 +46,18 @@ worker_instance_count: 3
 ocp4_workload_validate_rhoai_gpu_instance_type: "g2-standard-4"
 ocp4_workload_validate_rhoai_gpu_vendor_pci_id: "10de"  # NVIDIA
 ocp4_workload_validate_rhoai_gpu_min_count: 1
+
+# Override bastion instance to set ansible_group=bastions (plural)
+# Default is item.name='bastion' (singular) which breaks create_inventory
+# group detection (looks for groups.bastions not groups.bastion)
+instances:
+  - name: bastion
+    count: 1
+    unique: true
+    public_ip: true
+    image_family: rhel-9
+    instance_type: "{{ bastion_instance_type | default('n2-standard-4') }}"
+    rootfs_size: "{{ bastion_rootfs_size | default(50) }}"
+    ansible_group: bastions
+    tags:
+      - bastion
