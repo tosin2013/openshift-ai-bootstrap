@@ -191,6 +191,19 @@ validation:
       base_domain is not set in secrets-${account}.yml (AWS only).
       Set it to your sandbox base domain, e.g.: base_domain: sandbox1044.opentlc.com
 
+  - name: "GCP base_domain set in vars (GCP only)"
+    command: >-
+      test "${cloud_provider}" != "gcp" ||
+      grep -q 'base_domain:' ~/agnosticd-v2-vars/openshift-cluster.yml
+    required: true
+    fail_message: >-
+      base_domain is not set for GCP deployment.
+      Set it in vars/rhoai-gcp.yml:
+        base_domain: <env-id>.gcp.redhatworkshops.io
+      Your GCP Open Environment DNS zone (e.g. txdmd.gcp.redhatworkshops.io)
+      is on the demo.redhat.com environment details page.
+      Then run: cp vars/rhoai-gcp.yml ~/agnosticd-v2-vars/openshift-cluster.yml
+
   - name: "GCP service account JSON valid (GCP only)"
     command: >-
       test "${cloud_provider}" != "gcp" ||

@@ -62,6 +62,8 @@ instances:
     tags:
       - bastion
 
+base_domain: txdmd.gcp.redhatworkshops.io
+
 # Disable Satellite — sandbox accounts don't have Satellite credentials (same as AWS)
 install_satellite_repositories: false
 
