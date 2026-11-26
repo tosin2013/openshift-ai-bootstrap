@@ -25,7 +25,7 @@ workloads:
 # Purpose-built GPU machine type — no guest_accelerators stanza needed.
 ocp4_workload_rhoai_gcp_gpu_machine_type: "g2-standard-4"
 ocp4_workload_rhoai_gcp_gpu_replicas: 1
-ocp4_workload_rhoai_gcp_gpu_zone: "us-east1-b"
+ocp4_workload_rhoai_gcp_gpu_zone: "us-east1-c"
 
 # GCP Open Environment credentials
 gcp_project_id: openenv-txdmd
