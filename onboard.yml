@@ -194,16 +194,16 @@ validation:
   - name: "GCP service account JSON exists (GCP only)"
     command: >-
       test "${cloud_provider}" != "gcp" ||
-      (test -f ~/agnosticd-v2-secrets/gcp-service-account.json &&
+      (test -f /secrets/gcp-service-account.json (EE path; file lives at ~/agnosticd-v2-secrets/gcp-service-account.json on host) &&
        grep -q 'gcp_project_id:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
        grep -q 'gcp_credentials_file:' ~/agnosticd-v2-secrets/secrets-${account}.yml)
     required: true
     fail_message: >-
       GCP credentials not configured. Required for GCP deployments:
-      1. Place service account JSON at: ~/agnosticd-v2-secrets/gcp-service-account.json
+      1. Place service account JSON at: /secrets/gcp-service-account.json (EE path; file lives at ~/agnosticd-v2-secrets/gcp-service-account.json on host)
       2. Set in secrets-${account}.yml:
            gcp_project_id: <your-gcp-project-id>
-           gcp_credentials_file: ~/agnosticd-v2-secrets/gcp-service-account.json
+           gcp_credentials_file: /secrets/gcp-service-account.json (EE path; file lives at ~/agnosticd-v2-secrets/gcp-service-account.json on host)
       Get the service account JSON from: https://access.redhat.com/terms-based-registry/
       or from your demo.redhat.com GCP Open Environment.
 
