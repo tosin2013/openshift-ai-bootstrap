@@ -70,3 +70,8 @@ install_satellite_repositories: false
 # Skip common packages on bastion — RHEL 9 uses RHUI which should work
 # but disable as safety measure like AWS
 install_common_packages: false
+
+# cert-manager channel — same fix as AWS (stable-v1.15 does not exist on OCP 4.22)
+ocp4_workload_cert_manager_channel: stable-v1
+ocp4_workload_cert_manager_install_ingress_certificates: false
+ocp4_workload_cert_manager_install_api_certificates: false
