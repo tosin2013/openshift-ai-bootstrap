@@ -1,6 +1,82 @@
 ---
 # Removal tasks for ocp4_workload_rhoai
 
+# ── Pre-removal: clean Route53 cluster DNS records ───────────────────────────
+# CloudFormation cannot delete the cluster's Route53 hosted zone while the
+# OCP installer's A records (api.* and *.apps.*) remain. Remove them here
+# while the cluster API is still accessible, before agd destroy runs.
+- name: Get cluster ingress domain
+  kubernetes.core.k8s_info:
+    api_version: config.openshift.io/v1
+    kind: Ingress
+    name: cluster
+  register: ocp4_workload_rhoai_cluster_ingress
+  failed_when: false
+
+- name: Set cluster base domain fact
+  ansible.builtin.set_fact:
+    ocp4_workload_rhoai_base_domain: >-
+      {{ ocp4_workload_rhoai_cluster_ingress.resources[0].spec.domain
+         | regex_replace('^apps\.', '') }}
+  when: ocp4_workload_rhoai_cluster_ingress.resources | length > 0
+
+- name: Find Route53 hosted zone for cluster domain
+  ansible.builtin.command:
+    argv:
+      - aws
+      - route53
+      - list-hosted-zones
+      - --query
+      - "HostedZones[?Name=='{{ ocp4_workload_rhoai_base_domain }}.'].Id"
+      - --output
+      - text
+  register: ocp4_workload_rhoai_zone_id_raw
+  failed_when: false
+  changed_when: false
+  when: ocp4_workload_rhoai_base_domain is defined
+
+- name: Set Route53 zone ID fact
+  ansible.builtin.set_fact:
+    ocp4_workload_rhoai_zone_id: >-
+      {{ ocp4_workload_rhoai_zone_id_raw.stdout | regex_replace('^/hostedzone/', '') | trim }}
+  when:
+    - ocp4_workload_rhoai_zone_id_raw.stdout is defined
+    - ocp4_workload_rhoai_zone_id_raw.stdout | trim | length > 0
+
+- name: Get non-default Route53 records blocking CloudFormation deletion
+  ansible.builtin.command:
+    argv:
+      - aws
+      - route53
+      - list-resource-record-sets
+      - --hosted-zone-id
+      - "{{ ocp4_workload_rhoai_zone_id }}"
+      - --query
+      - "ResourceRecordSets[?Type=='A']"
+      - --output
+      - json
+  register: ocp4_workload_rhoai_route53_records
+  failed_when: false
+  changed_when: false
+  when: ocp4_workload_rhoai_zone_id is defined
+
+- name: Delete cluster A records from Route53 zone
+  ansible.builtin.command:
+    argv:
+      - aws
+      - route53
+      - change-resource-record-sets
+      - --hosted-zone-id
+      - "{{ ocp4_workload_rhoai_zone_id }}"
+      - --change-batch
+      - '{"Changes":[{"Action":"DELETE","ResourceRecordSet":{{ item | to_json }}}]}'
+  loop: "{{ ocp4_workload_rhoai_route53_records.stdout | default('[]') | from_json }}"
+  failed_when: false
+  changed_when: true
+  when:
+    - ocp4_workload_rhoai_zone_id is defined
+    - ocp4_workload_rhoai_route53_records.stdout is defined
+
 - name: Delete RHOAI Argo CD Application
   kubernetes.core.k8s:
     state: absent
