@@ -143,3 +143,31 @@ cd ~/agnosticd-v2 && ./bin/agd provision \
   [artemis-edge-acm-demo/scripts/validate-gcp-key.py](https://github.com/tosin2013/artemis-edge-acm-demo/blob/main/scripts/validate-gcp-key.py).
 - OCP IPI on GCP requires `roles/owner` or specific compute/DNS/storage roles.
   `roles/owner` is acceptable for sandbox/demo environments.
+
+---
+
+## GCP DNS Zone — Use the Environment ID as the GUID
+
+For RHPDS GCP Open Environments, the environment creates a Cloud DNS zone
+`<env-id>.gcp.redhatworkshops.io` (e.g. `txdmd.gcp.redhatworkshops.io`).
+The simplest setup is to use the **environment ID as your GUID** so the
+OCP installer's required cluster zone already exists:
+
+```yaml
+# vars/rhoai-gcp.yml — use env-id as the GUID equivalent
+base_domain: gcp.redhatworkshops.io
+# OCP installer will look for: <guid>.gcp.redhatworkshops.io → already exists!
+```
+
+```bash
+# Use the environment ID as the GUID
+agd provision --guid txdmd --config openshift-cluster --account txdmd
+```
+
+This avoids having to manually create the sub-zone and NS delegation.
+If you use a different GUID (e.g. `rhoai01gcp`), you must:
+1. Create the sub-zone: `gcloud dns managed-zones create ...`
+2. Add NS delegation in the parent zone
+
+The environment ID is visible in your service account email:
+`sa-openenv-<env-id>@rhpds-NNNNNN.iam.gserviceaccount.com`
