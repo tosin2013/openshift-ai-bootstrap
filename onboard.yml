@@ -191,21 +191,26 @@ validation:
       base_domain is not set in secrets-${account}.yml (AWS only).
       Set it to your sandbox base domain, e.g.: base_domain: sandbox1044.opentlc.com
 
-  - name: "GCP service account JSON exists (GCP only)"
+  - name: "GCP service account JSON valid (GCP only)"
     command: >-
       test "${cloud_provider}" != "gcp" ||
-      (test -f /secrets/gcp-service-account.json (EE path; file lives at ~/agnosticd-v2-secrets/gcp-service-account.json on host) &&
+      (test -f ~/agnosticd-v2-secrets/gcp-service-account.json &&
        grep -q 'gcp_project_id:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
-       grep -q 'gcp_credentials_file:' ~/agnosticd-v2-secrets/secrets-${account}.yml)
+       grep -q 'gcp_credentials_file:' ~/agnosticd-v2-secrets/secrets-${account}.yml &&
+       python3 scripts/validate-gcp-key.py ~/agnosticd-v2-secrets/gcp-service-account.json)
     required: true
     fail_message: >-
-      GCP credentials not configured. Required for GCP deployments:
-      1. Place service account JSON at: /secrets/gcp-service-account.json (EE path; file lives at ~/agnosticd-v2-secrets/gcp-service-account.json on host)
+      GCP service account JSON is missing or invalid. Required for GCP deployments:
+      1. Place a VALID service account JSON at: ~/agnosticd-v2-secrets/gcp-service-account.json
+         Validate it: python3 scripts/validate-gcp-key.py ~/agnosticd-v2-secrets/gcp-service-account.json
       2. Set in secrets-${account}.yml:
            gcp_project_id: <your-gcp-project-id>
-           gcp_credentials_file: /secrets/gcp-service-account.json (EE path; file lives at ~/agnosticd-v2-secrets/gcp-service-account.json on host)
-      Get the service account JSON from: https://access.redhat.com/terms-based-registry/
-      or from your demo.redhat.com GCP Open Environment.
+           gcp_credentials_file: /secrets/gcp-service-account.json
+      COMMON ISSUE (RHPDS): The JSON may contain a truncated PEM key (lines 3 or 18
+      are 62 chars instead of 64). If validate-gcp-key.py reports a line-length
+      violation, download a fresh JSON from the GCP Console → IAM → Service Accounts
+      → Keys → Add Key → JSON. Do NOT reuse the RHPDS-downloaded JSON without
+      validating it first.
 
   - name: "ocp4_pull_secret is set (not placeholder)"
     command: >-

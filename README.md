@@ -196,6 +196,7 @@ cd ~/agnosticd-v2
 | ArgoCD can't create DataScienceCluster | Run: `oc create clusterrolebinding openshift-gitops-rhoai-admin --clusterrole=cluster-admin --serviceaccount=openshift-gitops:openshift-gitops-argocd-application-controller` (automated in role for new deploys) |
 | `nvidia.com/gpu` not allocatable | GPU Operator takes 5–10 min after ClusterPolicy is created — wait and re-check |
 | Wrong cluster with `oc` commands | `export KUBECONFIG=~/agnosticd-v2-output/rhoai01/openshift-cluster_rhoai01_kubeconfig` |
+| GCP `ASN.1 parsing error: short data` on provision | The RHPDS service account JSON has truncated PEM lines (a known RHPDS issue). Run `python3 scripts/validate-gcp-key.py ~/agnosticd-v2-secrets/gcp-service-account.json` — if it reports a line-length violation on lines 3 or 18, the key is corrupted. Download a fresh key from GCP Console → IAM → Service Accounts → Keys → Add Key → JSON |
 | `agd destroy` fails — `HostedZoneNotEmptyException` | CloudFormation can't delete the Route53 zone because cluster DNS records remain. Clear them first: `aws route53 list-resource-record-sets --hosted-zone-id <ID>` then delete `api.*` and `*.apps.*` A records, then re-run `agd destroy` or `aws cloudformation delete-stack --stack-name openshift-cluster-<guid>` |
 
 ---
