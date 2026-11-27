@@ -325,14 +325,12 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   for a usable deployment. The chart schema validation warnings for other component fields
   are non-fatal and can be suppressed.
 - **Q4** — Would Dynamic Resource Allocation (DRA) improve GPU scheduling in this deployment?
-  DRA (KEP-3063, GA in Kubernetes 1.32 / OCP 4.22+) allows fine-grained, structured GPU
-  resource sharing — e.g. MIG partitioning on A100, time-slicing, and multi-instance sharing.
-  RHOAI 3.4 supports DRA via the NVIDIA GPU Operator's DRA plugin. Questions to resolve:
-  (1) Does enabling DRA conflict with the existing ClusterPolicy + NFD setup?
-  (2) Should DRA be an optional var (`ocp4_workload_rhoai_dra_enabled: false`) in the role?
-  (3) Does DRA provide user-visible benefit for the default workshop/demo profile (single-user
-      notebook access) or is it primarily for multi-tenant production clusters?
-  Candidate spec: add as opt-in extension to spec 002 or a new spec 009.
+  **Decision: document use cases only, do not implement.** The default deployment (single-user
+  workshop/demo, one notebook per GPU) does not benefit from DRA. DRA is relevant for
+  multi-tenant production clusters with shared GPU pools. Use cases documented in
+  `docs/dra-use-cases.md`: MIG partitioning (A100/H100 only), time-slicing, structured
+  resource sharing. The current ClusterPolicy + NFD setup is correct for single-user demos.
+  No code changes planned; revisit if multi-tenant RHOAI deployments are added.
 - **Q5** — Would an optional model-serving inference step make sense after RHOAI deployment?
   After the platform is deployed (specs 003/004/005), end users need a path from "RHOAI
   installed" to "a model is serving and I can send inference requests." RHOAI 3.4 model
@@ -347,7 +345,11 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   Proposed approach for a new spec 009: deploy a Granite-3b model using the Generative
   profile (vLLM runtime, KServe InferenceService) with an optional OpenAI-compatible API
   smoke test. Toggle via `ocp4_workload_rhoai_inference_demo: false` in defaults.
-  Candidate spec: spec 009 — "RHOAI Post-Deploy Inference Demo" (optional workload).
+  Decision: document model recommendations per GPU tier in `docs/gpu-sizing.md` (not an
+  implementation spec). A GitHub Actions workflow (`.github/workflows/model-catalog-check.yml`)
+  queries the HuggingFace Hub API weekly and opens a GitHub issue when new Granite or Llama
+  model versions appear. This keeps the doc current without manual maintenance.
+  No new Ansible role planned at this time; inference demo could be a future opt-in workload.
   Note: rhaii profile (llm-d, distributed inference) is out of scope per C-02.
 
 ## Cross-Cutting Notes
