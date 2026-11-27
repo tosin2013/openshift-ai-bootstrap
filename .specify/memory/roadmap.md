@@ -1,23 +1,31 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.1.1 → 1.1.2
-Bump rationale: PATCH — 003 in-progress → verified. All 8 validation checks
-  passed manually on live AWS deployment (2026-11-26): DataScienceCluster Ready,
-  dashboard HTTP 301, NFD NodeFeatureDiscovery, CUDA driver label, ClusterPolicy
-  ready, nvidia.com/gpu=1, GPU Operator pods Running, RHOAI pods Running.
+Version change: 1.1.2 → 1.2.0
+Bump rationale: MINOR — spec 004 (GCP) in-progress with significant findings.
+  OCP 4.22.22 deployed on GCP (us-east1). RHOAI operator, ArgoCD, DSC, dashboard
+  all operational. GPU node attached but no hardware GPU visible (GCP Machine API
+  OCP 4.22 does not pass guestAccelerators; g2/L4 not available in us-east1).
+  Q2 resolved: GCP GPU requires dedicated machine type (g2) in a supported region.
 
 Changes this revision:
-  - Status: 003 in-progress → verified
-  - Notes: 003 updated with deployment-time lessons
+  - Status: 004 planned → in-progress
+  - Spec 004 notes updated with deployment lessons
+  - C-07 added: GCP GPU region constraint
+  - Q2 resolved
 
-Specs affected: 003
-Open questions added/resolved: Q1 (OLM channel) — resolved: stable-v1 channel
-  correct on OCP 4.22 (stable-v1.15 does not exist).
+Specs affected: 004
+Open questions resolved: Q2 (GCP accelerator field) — confirmed OCP 4.22 Machine
+  API does not support guestAccelerators (webhook rejects field as unknown). GPU
+  nodes on GCP require g2-standard-4 (L4) machine type in a region that supports
+  g2 (us-east4, us-central1 — NOT us-east1). Deploy GCP cluster in us-east4 for
+  GPU support.
 
-Notes: First successful RHOAI deployment on AWS. Release candidate for v0.1.0-aws.
+Notes: GCP cluster live at rhoai01gcp.txdmd.gcp.redhatworkshops.io with 9 nodes.
+  RHOAI dashboard accessible HTTP 200. GPU hardware not allocatable (region constraint).
+  v0.2.0-gcp release gate blocked on GPU check. Next: redeploy in us-east4.
 
---- Prior revision (1.1.1, 2026-11-26) ---
+--- Prior revision (1.1.2, 2026-11-26) ---
 Version change: 1.0.3 → 1.1.1
 Bump rationale: MINOR — added spec 008 (RHOAI Post-Deploy Validation) + 003 in-progress.
 Changes: Status: 003 planned → in-progress; spec 008 added.
@@ -90,6 +98,12 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ## Constraints & Decisions
 
+- **C-07 — GCP GPU region requirement:** g2-standard-4 (NVIDIA L4) is NOT
+  available in us-east1. For GCP GPU deployments, use us-east4 or us-central1.
+  OCP 4.22's GCP Machine API webhook rejects `guestAccelerators` as an unknown
+  field, so n1+T4 acceleration cannot be attached via MachineSet. Only dedicated
+  GPU machine types (g2-standard-4) work. Set `gcp_region: us-east4` in
+  vars/rhoai-gcp.yml for the next deployment.
 - **C-01 — OCP 4.22 as initial target:** OCP 5 support deferred until a stable
   AgnosticD installer config for OCP 5 is confirmed. The RHOAI Helm chart
   requires OCP >= 4.19.9; 4.22 is the safest confirmed version.
@@ -184,22 +198,34 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   use stable-v1 (Q1 resolved); (5) bastion must use RHUI marketplace image (Hourly2)
   not GOLD image. All lessons automated in ocp4_workload_rhoai role.
 
-### 004 — GCP Deployment (OCP 4.22 + RHOAI + GPU)  [status: planned]
+### 004 — GCP Deployment (OCP 4.22 + RHOAI + GPU)  [status: in-progress]
 
 - **Description:** Provision OCP 4.22 on GCP using the `openshift-cluster`
   AgnosticD deployer and apply ocp4_workload_rhoai. GPU node pool uses
-  n1-standard-4 instances with an attached NVIDIA T4 accelerator.
+  g2-standard-4 (NVIDIA L4, 24GB VRAM) in a region that supports g2 machines.
 - **Outcome:** Live RHOAI dashboard on GCP cluster with one GPU node.
   agnosticd_user_info emitted. Deployment teardown confirmed clean.
-- **Scope (in):** vars/rhoai-gcp.yml provision, GPU MachineSet
-  (n1-standard-4 + T4 accelerator).
+- **Scope (in):** vars/rhoai-gcp.yml provision, GPU MachineSet (g2-standard-4).
 - **Scope (out):** AWS and Azure deployments.
 - **Depends on:** 002
-- **Governed by:** C-01, C-02, C-03, C-04
+- **Governed by:** C-01, C-02, C-03, C-04, C-07
 - **Spec dir:** specs/004-gcp-deployment
-- **Notes:** GCP GPU accelerator configuration uses an `accelerator` field
-  rather than instance type — may need MachineSet template adjustment in
-  agnosticd-v2. See Open Question Q2.
+- **Notes (2026-11-27):** OCP 4.22.22 deployed in us-east1 (project openenv-txdmd).
+  Cluster live at rhoai01gcp.txdmd.gcp.redhatworkshops.io. All operators installed:
+  cert-manager, NFD, GPU Operator, GitOps, RHOAI. ArgoCD RHOAI app Synced/Healthy.
+  DataScienceCluster Ready. Dashboard HTTP 200. GPU node provisioned but no hardware
+  GPU visible. Root causes confirmed:
+  (1) g2-standard-4 (L4) not available in us-east1 — STOCKOUT in all 3 zones
+      (actual root cause: g2 machine series not supported in us-east1 region).
+  (2) n1+T4 via guestAccelerators rejected by OCP 4.22 Machine API webhook as
+      unknown field — VM created without GPU.
+  (3) OLM OperatorGroup must exist before Subscription — install_operator role
+      creates it but needs both in same namespace block.
+  (4) cert-manager GCP DNS01 solver requires gcp_credentials (JSON dict) even when
+      no certificates requested — set via lookup('file', '/secrets/gcp-service-account.json') | from_json.
+  (5) Workers need n2-standard-4 ×5 minimum (3 insufficient for RHOAI dashboard).
+  Blocking release gate item: nvidia.com/gpu not allocatable. Resolution: re-deploy
+  cluster in us-east4 (g2 supported) or us-central1 for v0.2.0-gcp release tag.
 
 ### 005 — Azure Deployment (OCP 4.22 + RHOAI + GPU)  [status: planned]
 
@@ -280,10 +306,18 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 - **Q1** ~~Does rhai-on-openshift-chart v3.4 require the RHOAI operator channel
   to be `stable` instead of `beta` on OCP 4.22?~~ **RESOLVED 2026-11-26:** channel `stable-v1`
   is correct on OCP 4.22. cert-manager channel stable-v1.15 does not exist — use stable-v1.
-  when deploying spec 003.
-- **Q2** — Does ocp4_workload_machinesets support the GCP `accelerator` field for
-  GPU node pools, or does it require a custom MachineSet manifest? Resolution:
-  verify during spec 004 against the agnosticd-v2 MachineSet role implementation.
+- **Q2** ~~Does ocp4_workload_machinesets support the GCP `accelerator` field for
+  GPU node pools, or does it require a custom MachineSet manifest?~~ **RESOLVED 2026-11-27:**
+  OCP 4.22 GCP Machine API webhook rejects `guestAccelerators` as unknown field — it is not
+  supported. GPU nodes on GCP require a dedicated GPU machine type (g2-standard-4 for L4).
+  g2 is not available in us-east1. Next GCP deployment must use us-east4 or us-central1.
+  ocp4_workload_machinesets has no GCP implementation at all; GPU MachineSet is created
+  directly via kubernetes.core.k8s in ocp4_workload_rhoai role using a worker MS as template.
+- **Q3** — Does the RHOAI Helm chart v3.4 require specific DSC component managementState
+  values to work correctly? **Partially resolved:** Setting all components to `Removed` via
+  chart values disables the RHOAI dashboard. `dashboard` and `workbenches` must be `Managed`
+  for a usable deployment. The chart schema validation warnings for other component fields
+  are non-fatal and can be suppressed.
 
 ## Cross-Cutting Notes
 
@@ -299,4 +333,4 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ---
 
-**Version**: 1.1.2 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-26
+**Version**: 1.2.0 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-27
