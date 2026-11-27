@@ -168,33 +168,69 @@ When using RHOAI model serving, models are stored on PVCs:
 
 ## Recommended Models per GPU Tier
 
-> This table is refreshed weekly by `.github/workflows/model-catalog-check.yml`,
-> which queries the HuggingFace Hub API for new versions of the pinned model
-> families and opens a GitHub issue when new models appear.
+> **Last updated: November 2026.** This table is refreshed weekly by
+> `.github/workflows/model-catalog-check.yml`, which queries the HuggingFace
+> Hub API for new model versions and opens a GitHub issue when new models appear.
 
-| GPU Tier | VRAM | Recommended models | Serving profile |
+### Entry tier — 16–24 GB VRAM (T4, A10G, L4, g2-standard-4)
+
+| Model | Params | VRAM (BF16) | VRAM (4-bit) | License | Notes |
+|---|---|---|---|---|---|
+| `ibm-granite/granite-3.3-8b-instruct` | 8B | 16 GB | 4 GB | Apache 2.0 | Multilingual, 128K ctx |
+| `ibm-granite/granite-4.1-8b-instruct` | 8B | 16 GB | 4 GB | Apache 2.0 | Reasoning (thinking), 128K ctx |
+| `ibm-granite/granite-4.2-8b` | 8B | 16 GB | 4 GB | Apache 2.0 | Chain-of-thought, 512K ctx, Aug 2026 |
+| `meta-llama/Llama-3.1-8B-Instruct` | 8B | 16 GB | 4 GB | Llama 3.1 | Strong general purpose |
+| `mistralai/Mistral-7B-Instruct-v0.3` | 7B | 14 GB | 4 GB | Apache 2.0 | Reliable baseline |
+| `mistralai/Mistral-Small-3.1-24B` | 24B | 24 GB | 8 GB | Apache 2.0 | Multimodal, fits L4 exactly |
+
+### Mid tier — 40 GB VRAM (A100 40GB, a2-highgpu-1g) ← *current GCP deployment*
+
+| Model | Params | VRAM needed | License | Notes |
+|---|---|---|---|---|
+| `ibm-granite/granite-4.2-30b` | 30B | 32 GB (BF16) / 16 GB (4-bit) | Apache 2.0 | Reasoning, tool calling, 512K ctx — **Red Hat recommended** |
+| `ibm-granite/granite-4.1-30b-fp8` | 30B | 30 GB (FP8) | Apache 2.0 | FP8 optimized, 128K ctx |
+| `meta-llama/Muse-Glimmer-30B` | 30B | 32 GB (4-bit K-Quant) | Apache 2.0 | Agentic, multimodal (text+images), MCP, Aug 2026 |
+| `mistralai/Mistral-Small-3.1-24B` | 24B | 24 GB (BF16) | Apache 2.0 | Multimodal — fits with 16 GB to spare |
+| `meta-llama/Llama-3.3-70B-Instruct` | 70B | 35–40 GB (4-bit) | Llama 3.3 | Fits tight — monitor KV-cache |
+| `ibm-granite/granite-20b-code-instruct` | 20B | 20 GB (BF16) | Apache 2.0 | Code-focused, comfortable fit |
+
+> **A100 40GB sweet spot:** Granite 4.2-30B and Muse Glimmer 30B both fit at ~32 GB
+> in 4-bit quantization, leaving 8 GB headroom for KV-cache. Llama 3.3-70B fits but
+> needs careful batch size tuning to avoid OOM.
+
+### High tier — 80 GB VRAM (A100 80GB, 2×A100 40GB)
+
+| Model | Params | VRAM needed | License | Notes |
+|---|---|---|---|---|
+| `meta-llama/Llama-3.1-70B-Instruct` | 70B | 70 GB (BF16) | Llama 3.1 | Full precision, no quantization needed |
+| `meta-llama/Llama-3.3-70B-Instruct` | 70B | 70 GB (BF16) | Llama 3.3 | Stronger reasoning than 3.1 |
+| `mistralai/Mixtral-8x7B-Instruct-v0.1` | 47B active | 90 GB (BF16) | Apache 2.0 | MoE — needs 2×A100 40GB |
+| `ministral/Ministral-3-14B-Reasoning` | 14B | 14 GB | Apache 2.0 | Reasoning model, fits comfortably |
+
+### Multi-GPU tier — 160 GB+ (4×A100+, A3/H100)
+
+| Model | Params | Min setup | Notes |
 |---|---|---|---|
-| **Entry** (T4, A10G, L4) | 16–24 GB | `granite-3b-code-base`, `granite-7b-instruct`, `mistral-7b-instruct-v0.3`, `llama-3.1-8b-instruct` | Generative (vLLM) |
-| **Mid** (A100 40GB) | 40 GB | `granite-20b-code-instruct`, `llama-3.1-13b-instruct`, `codellama-34b-instruct` (4-bit) | Generative (vLLM) |
-| **High** (A100 80GB, 2×A100 40GB) | 80 GB | `llama-3.1-70b-instruct`, `llama-3.3-70b-instruct`, `mixtral-8x7b-instruct` | Generative (vLLM) |
-| **Multi-GPU** (4×A100+) | 160 GB+ | `llama-3.1-405b` (quantized), `granite-34b`, `codestral-22b` | Generative (vLLM) |
+| `meta-llama/Muse-Spark-816B-A42B` | 816B total / 42B active (MoE) | Multi-node A100/H100 | Restricted access; not for workshops |
+| `meta-llama/Llama-3.1-405B-Instruct` | 405B | 4×A100 80GB | Full precision; quantized fits 4×A100 40GB |
+
+---
 
 **Model serving profiles in RHOAI 3.4:**
 
-- **Generative (vLLM)** — single LLM served via KServe with vLLM runtime.
-  Exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Requires GPU.
-  Best for notebook demos and chat applications. Enabled by setting
-  `components.kserve.managementState: Managed` in the DataScienceCluster.
-- **Standard (Legacy)** — pre-3.4 single-model REST/gRPC serving. Use for
-  non-LLM models (sklearn, XGBoost, ONNX). CPU or GPU.
-- **Multi-model (ModelMesh)** — high-density serving of many small models on
-  shared GPU/CPU. Best for MLOps pipelines. Enabled via ModelMesh component.
+- **Generative (vLLM)** — single LLM via KServe + vLLM runtime. OpenAI-compatible
+  `/v1/chat/completions` endpoint. GPU required. Best for chat/notebook demos.
+  Enable: `components.kserve.managementState: Managed` in the DataScienceCluster.
+- **Standard (Legacy)** — pre-3.4 single-model REST/gRPC. For non-LLM models
+  (sklearn, XGBoost, ONNX). CPU or GPU.
+- **Multi-model (ModelMesh)** — high-density sharing of many small models on shared
+  GPU/CPU. For MLOps pipelines with many deployed models simultaneously.
 
 **Rules of thumb for model selection:**
 - Leave 15–20% VRAM headroom for KV-cache during inference
-- 4-bit quantized models (GPTQ/AWQ) need ~25% of the FP16 VRAM requirement
-- Granite models from Red Hat are recommended for enterprise use cases;
-  Llama/Mistral for community-supported general-purpose demos
+- 4-bit quantized models (GPTQ/AWQ/K-Quant) reduce VRAM by ~4× with <5% quality loss
+- Granite 4.x models (Apache 2.0) are the Red Hat-recommended default for enterprise use
+- Muse Glimmer 30B is the best current agentic/multimodal option on A100 40GB (Nov 2026)
 
 ---
 

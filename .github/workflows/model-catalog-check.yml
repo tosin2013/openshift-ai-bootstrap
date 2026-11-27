@@ -27,11 +27,12 @@ jobs:
           echo "$GRANITE" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch new Meta-Llama models from HuggingFace Hub
+      - name: Fetch new Meta-Llama / Muse models from HuggingFace Hub
         id: llama
         run: |
+          # meta-llama org covers both Llama and Muse families
           LLAMA=$(curl -sf \
-            "https://huggingface.co/api/models?author=meta-llama&sort=lastModified&limit=20" \
+            "https://huggingface.co/api/models?author=meta-llama&sort=lastModified&limit=30" \
             | jq -r '.[].modelId' 2>/dev/null || echo "")
           echo "llama_models<<EOF" >> "$GITHUB_OUTPUT"
           echo "$LLAMA" >> "$GITHUB_OUTPUT"
