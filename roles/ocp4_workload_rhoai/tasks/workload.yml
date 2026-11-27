@@ -291,7 +291,7 @@
                     managementState: Removed
                 dashboard:
                   dsc:
-                    managementState: Removed
+                    managementState: Managed
                 ray:
                   dsc:
                     managementState: Removed
@@ -307,7 +307,7 @@
                     managementState: Removed
                 workbenches:
                   dsc:
-                    managementState: Removed
+                    managementState: Managed
                 kueue:
                   dsc:
                     managementState: Removed
