@@ -4,7 +4,7 @@ Deploy Red Hat OpenShift AI (RHOAI) on OCP 4.22 with GPU support on AWS, GCP,
 or Azure — using AgnosticD v2, Helm, and Argo CD GitOps. RHOAI serves as a
 managed AI/ML platform for end users to run notebooks, pipelines, and model serving.
 
-> **Status:** AWS deployment verified ✅ | GCP/Azure planned
+> **Status:** AWS ✅ verified (v0.1.0-aws) | GCP ✅ verified (v0.2.0-gcp) | Azure planned
 
 ---
 
@@ -115,13 +115,18 @@ password, and RHOAI dashboard URL.
 
 ## Cloud Providers
 
-| Provider | GPU Instance | VRAM | Vars File |
-|---|---|---|---|
-| **AWS** ✅ verified | `g4dn.xlarge` (NVIDIA T4) | 16 GB | `vars/rhoai-aws.yml` |
-| GCP (planned) | `n1-standard-4` + T4 | 16 GB | `vars/rhoai-gcp.yml` |
-| Azure (planned) | `Standard_NC6s_v3` (V100) | 16 GB | `vars/rhoai-azure.yml` |
+| Provider | GPU Instance | VRAM | Status | Vars File |
+|---|---|---|---|---|
+| **AWS** | `g4dn.xlarge` (NVIDIA T4) | 16 GB | ✅ verified (v0.1.0-aws) | `vars/rhoai-aws.yml` |
+| **GCP** | `a2-highgpu-1g` (NVIDIA A100) | 40 GB | ✅ verified (v0.2.0-gcp) | `vars/rhoai-gcp.yml` |
+| Azure | `Standard_NC6s_v3` (V100) | 16 GB | planned | `vars/rhoai-azure.yml` |
 
-To use a larger GPU (e.g. for 13B+ models), see [`docs/gpu-sizing.md`](docs/gpu-sizing.md).
+For GPU sizing, model recommendations, and upgrading to a larger instance:
+see [`docs/gpu-sizing.md`](docs/gpu-sizing.md).
+
+> **Model catalog** (Granite, Llama, Muse, Qwen, Nemotron, Mistral) is updated weekly
+> by a [GitHub Actions workflow](.github/workflows/model-catalog-check.yml) that checks
+> for new HuggingFace releases and opens an issue when the sizing guide needs updating.
 
 ---
 
@@ -140,7 +145,9 @@ openshift-ai-bootstrap/
     ocp4_workload_rhoai/        ← installs RHOAI via Argo CD + rhai-on-openshift-chart
     ocp4_workload_validate_rhoai/ ← post-deploy validation (8 checks)
   docs/
-    gpu-sizing.md           ← GPU instance sizing guide (AWS/GCP/Azure)
+    gpu-sizing.md           ← GPU instance sizing guide + model recommendations (AWS/GCP/Azure)
+    dra-use-cases.md        ← Dynamic Resource Allocation use cases (MIG, time-slicing)
+    gcp-service-account-troubleshooting.md  ← GCP SA key validation and RHPDS workaround
   specs/                    ← implementation specs tracked by spec-status
 ```
 
@@ -184,6 +191,16 @@ cd ~/agnosticd-v2
   --config openshift-cluster \
   --account <your-sandbox-id>
 ```
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [`docs/gpu-sizing.md`](docs/gpu-sizing.md) | GPU instance sizing for AWS, GCP, and Azure. Includes per-tier model recommendations (Granite, Llama, Muse, Qwen, Nemotron, Mistral) and VRAM requirements. Updated weekly via GHA. |
+| [`docs/dra-use-cases.md`](docs/dra-use-cases.md) | Dynamic Resource Allocation (DRA) reference — MIG partitioning, time-slicing, when to use DRA vs. the default single-user setup. |
+| [`docs/gcp-service-account-troubleshooting.md`](docs/gcp-service-account-troubleshooting.md) | GCP service account key validation, RHPDS truncated key workaround, DNS zone setup. |
 
 ---
 
