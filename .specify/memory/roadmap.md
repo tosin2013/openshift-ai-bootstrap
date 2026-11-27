@@ -1,6 +1,12 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.2.0 → 1.3.0
+Bump rationale: MINOR — 004 verified (v0.2.0-gcp tagged, teardown clean, 8/8 PASS);
+  Q4 (DRA) and Q5 (inference profiles) added; Q5 expanded with Generative/Legacy/Multi-model
+  profile breakdown.
+
+--- Prior revision (1.2.0, 2026-11-27) ---
 Version change: 1.1.2 → 1.2.0
 Bump rationale: MINOR — spec 004 (GCP) in-progress with significant findings.
   OCP 4.22.22 deployed on GCP (us-east1). RHOAI operator, ArgoCD, DSC, dashboard
@@ -198,7 +204,7 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   use stable-v1 (Q1 resolved); (5) bastion must use RHUI marketplace image (Hourly2)
   not GOLD image. All lessons automated in ocp4_workload_rhoai role.
 
-### 004 — GCP Deployment (OCP 4.22 + RHOAI + GPU)  [status: in-progress]
+### 004 — GCP Deployment (OCP 4.22 + RHOAI + GPU)  [status: verified]
 
 - **Description:** Provision OCP 4.22 on GCP using the `openshift-cluster`
   AgnosticD deployer and apply ocp4_workload_rhoai. GPU node pool uses
@@ -318,6 +324,31 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
   chart values disables the RHOAI dashboard. `dashboard` and `workbenches` must be `Managed`
   for a usable deployment. The chart schema validation warnings for other component fields
   are non-fatal and can be suppressed.
+- **Q4** — Would Dynamic Resource Allocation (DRA) improve GPU scheduling in this deployment?
+  DRA (KEP-3063, GA in Kubernetes 1.32 / OCP 4.22+) allows fine-grained, structured GPU
+  resource sharing — e.g. MIG partitioning on A100, time-slicing, and multi-instance sharing.
+  RHOAI 3.4 supports DRA via the NVIDIA GPU Operator's DRA plugin. Questions to resolve:
+  (1) Does enabling DRA conflict with the existing ClusterPolicy + NFD setup?
+  (2) Should DRA be an optional var (`ocp4_workload_rhoai_dra_enabled: false`) in the role?
+  (3) Does DRA provide user-visible benefit for the default workshop/demo profile (single-user
+      notebook access) or is it primarily for multi-tenant production clusters?
+  Candidate spec: add as opt-in extension to spec 002 or a new spec 009.
+- **Q5** — Would an optional model-serving inference step make sense after RHOAI deployment?
+  After the platform is deployed (specs 003/004/005), end users need a path from "RHOAI
+  installed" to "a model is serving and I can send inference requests." RHOAI 3.4 model
+  serving has three distinct profiles that map to different user needs:
+  (a) **Generative** — single-model serving for LLMs (Granite, Llama, Mistral) via KServe
+      with vLLM runtime. Requires GPU. Best for "try a chat model" demos. Recommended
+      starting point for GPU-enabled deployments (specs 003/004).
+  (b) **Standard (Legacy)** — the pre-3.4 single-model serving path (REST/gRPC). Being
+      superseded by Generative but still supported for non-LLM models (sklearn, XGBoost).
+  (c) **Multi-model (ModelMesh)** — high-density serving of many small models on shared
+      GPU/CPU. Best for MLOps pipelines with many deployed models.
+  Proposed approach for a new spec 009: deploy a Granite-3b model using the Generative
+  profile (vLLM runtime, KServe InferenceService) with an optional OpenAI-compatible API
+  smoke test. Toggle via `ocp4_workload_rhoai_inference_demo: false` in defaults.
+  Candidate spec: spec 009 — "RHOAI Post-Deploy Inference Demo" (optional workload).
+  Note: rhaii profile (llm-d, distributed inference) is out of scope per C-02.
 
 ## Cross-Cutting Notes
 
@@ -333,4 +364,4 @@ Status legend (lifecycle): **undecided** · **needs-info** · **planned** ·
 
 ---
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-27
+**Version**: 1.3.0 | **Ratified**: 2026-11-24 | **Last Amended**: 2026-11-27

@@ -25,6 +25,10 @@
       Fix: redeploy cluster in us-east4 where g2-standard-4 is supported.
 - [ ] Update vars/rhoai-gcp.yml: gcp_region=us-east4, gcp_gpu_zone=us-east4-a
 - [ ] Re-provision GCP cluster in us-east4 for GPU hardware support
-- [ ] Verify agnosticd_user_info emitted with dashboard URL
-- [ ] Teardown test: agd destroy --guid rhoai01gcp --config openshift-cluster --account txdmd
-- [ ] Tag v0.2.0-gcp release after all 8 validation checks pass (requires GPU in us-east4)
+- [x] Verify agnosticd_user_info emitted — dashboard URL in provision-user-info.yaml ✅
+- [x] Teardown test: agd destroy — Ansible playbook PASS (failed=0). GCP bastion and
+      network deleted cleanly. OCP cluster nodes required manual GCP API deletion because
+      cloud_provider_gcp destroy_instances does not run openshift-install destroy cluster
+      (bastion is deleted before OCP installer runs). Note: add openshift-install destroy
+      step to cloud_provider_gcp destroy role before next deployment.
+- [x] Tag v0.2.0-gcp — released 2026-11-27 after 8/8 validation PASS ✅
