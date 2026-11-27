@@ -3,8 +3,7 @@
 # NOTE: ocp4_workload_machinesets has no GCP implementation (machineset-gcp.yml
 # does not exist in core_workloads). GPU MachineSet is created by the
 # ocp4_workload_rhoai role using kubernetes.core.k8s directly.
-# NOTE: T4 on n1 instances is deprecated (EOL Aug 2027). Using g2-standard-4
-# (NVIDIA L4, 24GB VRAM, ~$0.70/hr) — better value and no accelerator attachment needed.
+# GPU: a2-highgpu-1g (NVIDIA A100 40GB) — built-in GPU, no guestAccelerators/gpus field needed.
 cloud_provider: gcp
 cloud_provider_version: main
 cloud_provider_repo: https://github.com/tosin2013/cloud_provider_gcp.git
@@ -21,12 +20,10 @@ workloads:
   - ocp4_workload_rhoai
   - ocp4_workload_validate_rhoai
 
-# GPU node pool — n1-standard-4 + T4 (1× NVIDIA T4, 16GB VRAM)
-# g2-standard-4 (L4) is STOCKOUT in all us-east1 zones. Using n1+T4 instead.
-# T4 is deprecated (EOL Aug 2027) but widely available; switch to L4 when capacity allows.
-ocp4_workload_rhoai_gcp_gpu_machine_type: "n1-standard-4"
-ocp4_workload_rhoai_gcp_gpu_accelerator_type: "nvidia-tesla-t4"
-ocp4_workload_rhoai_gcp_gpu_accelerator_count: 1
+# GPU node pool — a2-highgpu-1g (1× NVIDIA A100 40GB VRAM, us-east1-b)
+# A100 is built into the a2 machine type — no gpus/guestAccelerators field needed.
+# us-east1 g2-standard-4 (L4) has capacity issues; a2 is the reliable alternative.
+ocp4_workload_rhoai_gcp_gpu_machine_type: "a2-highgpu-1g"
 ocp4_workload_rhoai_gcp_gpu_replicas: 1
 ocp4_workload_rhoai_gcp_gpu_zone: "us-east1-b"
 
@@ -45,8 +42,8 @@ ocp4_workload_rhoai_gitops_branch: "rhoai-devtest"
 worker_instance_type: n2-standard-4
 worker_instance_count: 5
 
-# Validation role settings — g2-standard-4 (NVIDIA L4, 24GB VRAM)
-ocp4_workload_validate_rhoai_gpu_instance_type: "g2-standard-4"
+# Validation role settings — a2-highgpu-1g (NVIDIA A100, 40GB VRAM)
+ocp4_workload_validate_rhoai_gpu_instance_type: "a2-highgpu-1g"
 ocp4_workload_validate_rhoai_gpu_vendor_pci_id: "10de"  # NVIDIA
 ocp4_workload_validate_rhoai_gpu_min_count: 1
 
