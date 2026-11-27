@@ -182,6 +182,11 @@ When using RHOAI model serving, models are stored on PVCs:
 | `meta-llama/Llama-3.1-8B-Instruct` | 8B | 16 GB | 4 GB | Llama 3.1 | Strong general purpose |
 | `mistralai/Mistral-7B-Instruct-v0.3` | 7B | 14 GB | 4 GB | Apache 2.0 | Reliable baseline |
 | `mistralai/Mistral-Small-3.1-24B` | 24B | 24 GB | 8 GB | Apache 2.0 | Multimodal, fits L4 exactly |
+| `Qwen/Qwen3-8B` | 8B | 16 GB | 4 GB | Apache 2.0 | Strong reasoning baseline |
+| `Qwen/Qwen3-14B` | 14B | 28 GB | 7 GB | Apache 2.0 | Best quality on L4; fits at 4-bit |
+| `Qwen/Qwen2.5-Coder-14B-Instruct` | 14B | 28 GB | 7 GB | Apache 2.0 | Top code model for L4/A10G |
+| `Qwen/Qwen3-VL-8B-Instruct` | 8B | 16 GB | 4 GB | Apache 2.0 | Multimodal (vision+text) on T4/L4 |
+| `nvidia/Nemotron-H-4B-Instruct-128K` | 4B | 8 GB | 2 GB | NVIDIA Open | Hybrid SSM, 128K context, fast inference |
 
 ### Mid tier — 40 GB VRAM (A100 40GB, a2-highgpu-1g) ← *current GCP deployment*
 
@@ -189,14 +194,23 @@ When using RHOAI model serving, models are stored on PVCs:
 |---|---|---|---|---|
 | `ibm-granite/granite-4.2-30b` | 30B | 32 GB (BF16) / 16 GB (4-bit) | Apache 2.0 | Reasoning, tool calling, 512K ctx — **Red Hat recommended** |
 | `ibm-granite/granite-4.1-30b-fp8` | 30B | 30 GB (FP8) | Apache 2.0 | FP8 optimized, 128K ctx |
-| `meta-llama/Muse-Glimmer-30B` | 30B | 32 GB (4-bit K-Quant) | Apache 2.0 | Agentic, multimodal (text+images), MCP, Aug 2026 |
-| `mistralai/Mistral-Small-3.1-24B` | 24B | 24 GB (BF16) | Apache 2.0 | Multimodal — fits with 16 GB to spare |
-| `meta-llama/Llama-3.3-70B-Instruct` | 70B | 35–40 GB (4-bit) | Llama 3.3 | Fits tight — monitor KV-cache |
 | `ibm-granite/granite-20b-code-instruct` | 20B | 20 GB (BF16) | Apache 2.0 | Code-focused, comfortable fit |
+| `meta-llama/Muse-Glimmer-30B` | 30B | 32 GB (4-bit K-Quant) | Apache 2.0 | Agentic, multimodal (text+images), MCP, Aug 2026 |
+| `meta-llama/Llama-3.3-70B-Instruct` | 70B | 35–40 GB (4-bit) | Llama 3.3 | Fits tight — monitor KV-cache |
+| `mistralai/Mistral-Small-3.1-24B` | 24B | 24 GB (BF16) | Apache 2.0 | Multimodal — fits with 16 GB to spare |
+| `Qwen/Qwen3-32B` | 32B | 64 GB / 16 GB (4-bit) | Apache 2.0 | Strong reasoning, clean 4-bit fit |
+| `Qwen/QwQ-32B` | 32B | 64 GB / 16 GB (4-bit) | Apache 2.0 | Reasoning specialist — math, coding, o1-class |
+| `Qwen/Qwen2.5-Coder-32B-Instruct` | 32B | 64 GB / 16 GB (4-bit) | Apache 2.0 | Top open-source code model |
+| `Qwen/Qwen3-Coder-30B-A3B-Instruct` | 30B/3B active MoE | ~6 GB active | Apache 2.0 | Efficient code MoE — very fast inference |
+| `Qwen/Qwen3-VL-30B-A3B-Instruct` | 30B/3B active MoE | ~6 GB active | Apache 2.0 | Multimodal vision+text, MoE efficiency |
+| `Qwen/Qwen3-235B-A22B` | 235B/22B active MoE | ~44 GB active (BF16) | Apache 2.0 | Flagship MoE — only active params in VRAM; 4-bit recommended |
+| `nvidia/Llama-3_3-Nemotron-Super-49B-v1` | 49B | 25 GB (4-bit) | NVIDIA Open | Best Nemotron for A100 40GB — reasoning, code, tool use |
+| `nvidia/Nemotron-H-47B-Reasoning-128K` | 47B | 24 GB (4-bit) | NVIDIA Open | Hybrid SSM, reasoning, 128K ctx |
 
-> **A100 40GB sweet spot:** Granite 4.2-30B and Muse Glimmer 30B both fit at ~32 GB
-> in 4-bit quantization, leaving 8 GB headroom for KV-cache. Llama 3.3-70B fits but
-> needs careful batch size tuning to avoid OOM.
+> **A100 40GB sweet spot:** Granite 4.2-30B, Muse Glimmer 30B, Qwen3-32B, and QwQ-32B
+> all fit at 16–32 GB in 4-bit quantization, leaving headroom for KV-cache.
+> Qwen MoE models (3B-A3B, 235B-A22B) are especially efficient — only active params
+> load into VRAM. Llama 3.3-70B fits at 4-bit but needs careful batch size tuning.
 
 ### High tier — 80 GB VRAM (A100 80GB, 2×A100 40GB)
 

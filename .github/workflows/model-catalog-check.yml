@@ -48,6 +48,26 @@ jobs:
           echo "$MISTRAL" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
+      - name: Fetch new Qwen models from HuggingFace Hub
+        id: qwen
+        run: |
+          QWEN=$(curl -sf \
+            "https://huggingface.co/api/models?author=Qwen&sort=lastModified&limit=30" \
+            | jq -r '.[].modelId' 2>/dev/null || echo "")
+          echo "qwen_models<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$QWEN" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch new NVIDIA Nemotron models from HuggingFace Hub
+        id: nvidia
+        run: |
+          NVIDIA=$(curl -sf \
+            "https://huggingface.co/api/models?author=nvidia&sort=lastModified&limit=30" \
+            | jq -r '.[].modelId' 2>/dev/null | grep -i "nemotron\|llama-nemotron" || echo "")
+          echo "nvidia_models<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$NVIDIA" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Check for new models not in gpu-sizing.md
         id: diff
         run: |
@@ -75,6 +95,14 @@ jobs:
             [ -n "$model" ] && check_model "$model"
           done <<< "${{ steps.mistral.outputs.mistral_models }}"
 
+          while IFS= read -r model; do
+            [ -n "$model" ] && check_model "$model"
+          done <<< "${{ steps.qwen.outputs.qwen_models }}"
+
+          while IFS= read -r model; do
+            [ -n "$model" ] && check_model "$model"
+          done <<< "${{ steps.nvidia.outputs.nvidia_models }}"
+
           if [ -n "$NEW_MODELS" ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
             echo "new_models<<EOF" >> "$GITHUB_OUTPUT"
@@ -94,7 +122,7 @@ jobs:
 
 The weekly model catalog check found models that are not yet listed in \`docs/gpu-sizing.md\`.
 
-**New models (Granite / Llama / Mistral families):**
+**New models (Granite / Llama / Muse / Mistral / Qwen / Nemotron families):**
 ${{ steps.diff.outputs.new_models }}
 
 ### Next steps
