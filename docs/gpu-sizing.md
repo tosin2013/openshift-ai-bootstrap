@@ -166,9 +166,59 @@ When using RHOAI model serving, models are stored on PVCs:
 
 ---
 
+## Recommended Models per GPU Tier
+
+> This table is refreshed weekly by `.github/workflows/model-catalog-check.yml`,
+> which queries the HuggingFace Hub API for new versions of the pinned model
+> families and opens a GitHub issue when new models appear.
+
+| GPU Tier | VRAM | Recommended models | Serving profile |
+|---|---|---|---|
+| **Entry** (T4, A10G, L4) | 16–24 GB | `granite-3b-code-base`, `granite-7b-instruct`, `mistral-7b-instruct-v0.3`, `llama-3.1-8b-instruct` | Generative (vLLM) |
+| **Mid** (A100 40GB) | 40 GB | `granite-20b-code-instruct`, `llama-3.1-13b-instruct`, `codellama-34b-instruct` (4-bit) | Generative (vLLM) |
+| **High** (A100 80GB, 2×A100 40GB) | 80 GB | `llama-3.1-70b-instruct`, `llama-3.3-70b-instruct`, `mixtral-8x7b-instruct` | Generative (vLLM) |
+| **Multi-GPU** (4×A100+) | 160 GB+ | `llama-3.1-405b` (quantized), `granite-34b`, `codestral-22b` | Generative (vLLM) |
+
+**Model serving profiles in RHOAI 3.4:**
+
+- **Generative (vLLM)** — single LLM served via KServe with vLLM runtime.
+  Exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Requires GPU.
+  Best for notebook demos and chat applications. Enabled by setting
+  `components.kserve.managementState: Managed` in the DataScienceCluster.
+- **Standard (Legacy)** — pre-3.4 single-model REST/gRPC serving. Use for
+  non-LLM models (sklearn, XGBoost, ONNX). CPU or GPU.
+- **Multi-model (ModelMesh)** — high-density serving of many small models on
+  shared GPU/CPU. Best for MLOps pipelines. Enabled via ModelMesh component.
+
+**Rules of thumb for model selection:**
+- Leave 15–20% VRAM headroom for KV-cache during inference
+- 4-bit quantized models (GPTQ/AWQ) need ~25% of the FP16 VRAM requirement
+- Granite models from Red Hat are recommended for enterprise use cases;
+  Llama/Mistral for community-supported general-purpose demos
+
+---
+
+## Keeping the Model List Current
+
+Model availability in the RHOAI catalog and on HuggingFace Hub changes frequently.
+The workflow at `.github/workflows/model-catalog-check.yml` runs every Monday at
+09:00 UTC and:
+
+1. Queries the HuggingFace Hub API for new models from `ibm-granite` and
+   `meta-llama` organizations
+2. Cross-checks against the model names pinned in this document
+3. Opens a GitHub issue listing any new models with their HuggingFace URLs,
+   so a maintainer can evaluate whether to add them to the table above
+
+This keeps the sizing guide current without requiring manual monitoring of
+upstream model releases.
+
+---
+
 ## References
 
 - [RHOAI GPU requirements](https://docs.redhat.com/en/documentation/red_hat_openshift_ai)
 - [AWS GPU instances](https://aws.amazon.com/ec2/instance-types/#Accelerated_Computing)
 - [GCP GPU instances](https://cloud.google.com/compute/docs/gpus)
 - [Azure GPU VMs](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes-gpu)
+- [DRA use cases for RHOAI](dra-use-cases.md)
