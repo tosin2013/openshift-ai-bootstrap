@@ -142,19 +142,25 @@
          | selectattr('spec.template.spec.providerSpec.value.disks', 'defined')
          | map(attribute='spec.template.spec.providerSpec.value.disks')
          | map('first') | map(attribute='image') | first }}
+    ocp4_workload_rhoai_gcp_service_account: >-
+      {{ ocp4_workload_rhoai_gcp_machinesets.resources
+         | selectattr('metadata.name', 'search', '-worker-')
+         | selectattr('spec.template.spec.providerSpec.value.serviceAccounts', 'defined')
+         | map(attribute='spec.template.spec.providerSpec.value.serviceAccounts')
+         | map('first') | map(attribute='email') | first }}
   when:
     - cloud_provider | default('aws') == 'gcp'
     - ocp4_workload_rhoai_gpu_enabled | bool
     - ocp4_workload_rhoai_gcp_machinesets.resources | length > 0
 
-- name: Create GCP GPU MachineSet (g2-standard-4, NVIDIA L4)
+- name: Create GCP GPU MachineSet (n1-standard-4 + T4 or g2-standard-4 L4)
   kubernetes.core.k8s:
     state: present
     definition:
       apiVersion: machine.openshift.io/v1beta1
       kind: MachineSet
       metadata:
-        name: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
+        name: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-t4-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
         namespace: openshift-machine-api
         labels:
           machine.openshift.io/cluster-api-cluster: "{{ ocp4_workload_rhoai_gcp_cluster_id }}"
@@ -163,14 +169,14 @@
         selector:
           matchLabels:
             machine.openshift.io/cluster-api-cluster: "{{ ocp4_workload_rhoai_gcp_cluster_id }}"
-            machine.openshift.io/cluster-api-machineset: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
+            machine.openshift.io/cluster-api-machineset: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-t4-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
         template:
           metadata:
             labels:
               machine.openshift.io/cluster-api-cluster: "{{ ocp4_workload_rhoai_gcp_cluster_id }}"
               machine.openshift.io/cluster-api-machine-role: worker
               machine.openshift.io/cluster-api-machine-type: worker
-              machine.openshift.io/cluster-api-machineset: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
+              machine.openshift.io/cluster-api-machineset: "{{ ocp4_workload_rhoai_gcp_cluster_id }}-gpu-t4-{{ ocp4_workload_rhoai_gcp_gpu_zone }}"
           spec:
             taints:
               - key: nvidia.com/gpu
@@ -179,7 +185,7 @@
             providerSpec:
               value:
                 apiVersion: machine.openshift.io/v1beta1
-                kind: GCPMachineProviderConfig
+                kind: GCPMachineProviderSpec
                 machineType: "{{ ocp4_workload_rhoai_gcp_gpu_machine_type }}"
                 onHostMaintenance: Terminate
                 restartPolicy: Always
@@ -195,8 +201,15 @@
                     image: "{{ ocp4_workload_rhoai_gcp_coreos_image }}"
                     sizeGb: "{{ ocp4_workload_rhoai_gcp_disk_size_gb }}"
                     type: pd-ssd
+                serviceAccounts:
+                  - email: "{{ ocp4_workload_rhoai_gcp_service_account }}"
+                    scopes:
+                      - https://www.googleapis.com/auth/cloud-platform
                 credentialsSecret:
                   name: gcp-cloud-credentials
+                guestAccelerators:
+                  - acceleratorCount: "{{ ocp4_workload_rhoai_gcp_gpu_accelerator_count | default(1) }}"
+                    acceleratorType: "{{ ocp4_workload_rhoai_gcp_accelerator_type | default('nvidia-tesla-t4') }}"
   when:
     - cloud_provider | default('aws') == 'gcp'
     - ocp4_workload_rhoai_gpu_enabled | bool
